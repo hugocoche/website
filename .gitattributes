@@ -1,3 +1,1 @@
-sections/projets/ filter=lfs diff=lfs merge=lfs -text
-sections/ filter=lfs diff=lfs merge=lfs -text
-sections/projets/data_mining/data_mining_files/connexions_perdu.pdf filter=lfs diff=lfs merge=lfs -text
+sections/projets/data_mining/data_mining_files/connexions_perdue.pdf filter=lfs diff=lfs merge=lfs -text

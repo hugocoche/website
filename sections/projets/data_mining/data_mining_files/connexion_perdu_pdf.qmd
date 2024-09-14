@@ -7,5 +7,5 @@ categories: "pdf"
 author: "Hugo Cochereau & Gregory Jaillet"
 ---
 
-[{{< fa file-pdf >}} Accéder au rapport complet](connexions_perdu.pdf){.btn .btn-outline-primary .btn-lg .center target="_blank"}
+[{{< fa file-pdf >}} Accéder au rapport complet](connexions_perdue.pdf){.btn .btn-outline-primary .btn-lg .center target="_blank"}
 
