@@ -6,7 +6,10 @@ lang: fr
 # codes exécutés en local
 execute:
   freeze: auto
-
+title-meta: "Hugo Cochereau"
+description-meta: "Portfolio de Hugo Cochereau"
+author-meta: "Hugo Cochereau"
+keywords-meta: "Hugo Cochereau, Data science, Economiste, Machine Learning"
 website:
   title: "Hugo Cochereau"
   favicon: "imgs/hc.ico"
@@ -72,3 +75,4 @@ format:
 
 include-in-header:
   file: head.html
+
