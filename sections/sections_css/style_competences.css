@@ -1,0 +1,141 @@
+/* suppression des ancres */
+a.anchorjs-link {
+  display: none;
+}
+
+/* Dispose les éléments en grille */
+.skills-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  /* Une seule colonne par défaut */
+  gap: 3vw;
+  margin: 2vw 2vh
+}
+
+/* Section individuelle de compétences */
+.skills-section {
+  background: white;
+  padding: 2vw;
+  border-radius: 20px;
+  transition: 1s;
+  position: relative;
+  overflow: hidden;
+  /* Masquer le débordement */
+}
+
+
+/* Effet survol sur la section */
+.skills-section:hover {
+  transform: translateY(-0.5vh);
+  /* Déplacer vers le haut */
+  box-shadow: 3vh 2vh 10vh rgba(0, 0, 0, 0.2);
+  background: #343a40;
+}
+
+
+.skills-section strong {
+  color: #D4A017
+}
+
+code {
+  color: #8B6508;
+  padding: 2px;
+  border-radius: 0.2vw;
+}
+
+/* Style pour les titres des sections */
+.skills-section h2 {
+  color: #8B6508;
+  margin-bottom: 1vh;
+  font-size: 20px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+}
+
+/* Style pour les listes */
+.skills-section ul {
+  list-style-type: none;
+  /* Supprimer les puces */
+  padding: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Style pour les éléments de liste */
+.skills-section ul li {
+  background: #e7f3ff;
+  margin: 0.5vh 0;
+  padding: 1vw;
+  border-radius: 10px;
+  transition: 0.5s;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.skills-section details ul {
+  list-style-type: disc;
+  /* Utilise des puces pour les listes à l'intérieur des details */
+  margin-left: 40px;
+  /* Ajoute une marge pour aligner les puces correctement */
+}
+
+/* Effet survol sur les éléments de liste */
+.skills-section ul li:hover {
+  background: #343a40;
+  color: white;
+  transform: scale(1.05);
+  /* Agrandir légèrement */
+  box-shadow: 0 0.5vh 1vh #343a40;
+}
+
+.skills-section ul:hover li details ul li {
+  background: #343a40;
+  color: white;
+}
+
+/* Style pour les textes en gras */
+.skills-section ul li:hover strong {
+  color: #8B6508;
+}
+
+/* Effet avant survol sur les éléments de liste */
+.skills-section ul li::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: #343a40;
+  border-radius: 50%;
+  transition: 0.5s;
+  z-index: -1;
+}
+
+
+/* zoom improvisé au survol des éléments de liste */
+.skills-section ul li:hover::after {
+  width: 200%;
+  height: 200%;
+  top: -10%;
+  left: -10%;
+}
+
+/* Styles pour les écrans larges */
+@media (min-width: 1300px) {
+  .skills-container {
+    grid-template-columns: 1fr 1fr;
+    /* Deux colonnes pour les écrans larges */
+  }
+
+  /* Réduction des marges */
+  main {
+    margin-left: -20vw;
+    margin-right: -20vw;
+  }
+
+  .skills-section h2 {
+    font-size: 3vh;
+  }
+}

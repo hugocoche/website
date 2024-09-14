@@ -1,0 +1,55 @@
+---
+title: "Hugo Cochereau"
+pagetitle: "Hugo Cochereau"
+smooth-scroll: true
+toc: false
+backgroundcolor: "#fff8e7"
+format: 
+  html:
+    css: "sections/sections_css/style_accueil.css"
+about:
+    template: trestles
+    image: "imgs/moi.jpg"
+    image-shape: round
+    links:
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/hugo-cochereau-175448207
+      target: _blank
+    - icon: github
+      text: GitHub
+      href: https://github.com/hugocoche
+      target: _blank
+    - icon: envelope
+      text: Email
+      href: mailto:hugo.p-cochereau@outlook.fr
+      target: _blank
+---
+
+
+# ÉTUDIANT EN ÉCONOMIE ET DATA SCIENCE 
+
+## {{< fa handshake >}} Bonjour, et bienvenue sur mon site !
+
+Avec un master en économie spécialisé en Data Science, j'ai une solide expérience en analyse statistique, économétrie et apprentissage automatique. Je suis actuellement à la recherche d'une opportunité professionnelle pour mettre à profit mes compétences.
+
+
+[Télécharger mon CV {{< fa download >}}](assets/CV.pdf){.btn .btn-outline-primary .btn role="button" .center .custom-hover target="_blank"}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

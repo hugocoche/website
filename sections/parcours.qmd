@@ -1,0 +1,67 @@
+---
+toc: false
+back-to-top-navigation: true
+smooth-scroll: true
+backgroundcolor: "#fff8e7"
+format: 
+    html:
+        css: "sections_css/style_parcours.css"
+---
+
+<div class="container">
+<!-- <div class="column">
+<h2>{{< fa briefcase >}} Parcours Professionnel</h2>
+<ul>
+<li><strong>Data Scientist</strong> chez XYZ Corp (2020 - Présent)
+<ul>
+<li>Analyse des données et création de modèles prédictifs.</li>
+<li>Développement de tableaux de bord interactifs.</li>
+</ul>
+</li>
+<li><strong>Analyste de Données</strong> chez ABC Inc (2018 - 2020)
+<ul>
+<li>Collecte et nettoyage des données.</li>
+<li>Visualisation des données pour les parties prenantes.</li>
+</ul>
+</li>
+</ul>
+</div> -->
+<div class="column">
+<h2><i class="fas fa-graduation-cap"></i> Parcours Académique</h2>
+<ul>
+<li>
+<div style="display: flex; align-items: center;">
+<div style="flex: 1;">
+<span style="color: black; font-weight: bold;">2023 - 2024</span><br>
+<strong>Master en Data Science/Economie (en cours)</strong> <span style="color: black; font-weight: bold;">Université de Tours</span><br>
+<i class="fas fa-location-dot"></i> Tours, France <br>
+<a href="https://droit.univ-tours.fr/version-francaise/masters/master-economie-de-lentreprise-et-des-marches-economiste-dentreprise-1" target="_blank">En savoir plus</a>
+</div>
+<div style="flex: 0;">
+<img src="parcours_files\logo_MECEN.png" alt="Master Image" style="width: 100px; height: auto; margin-left: 20px;">
+</div>
+</div>
+</li>
+<hr>
+<li>
+<div style="display: flex; align-items: center;">
+<div style="flex: 1;">
+<span style="color: black; font-weight: bold;">2020 - 2023</span><br>
+<strong>Licence en Économie de l'entreprise</strong> <span style="color: black; font-weight: bold;">Université de Tours</span><br>
+<i class="fas fa-location-dot"></i> Tours, France <br>
+<a href="https://droit.univ-tours.fr/version-francaise/licences-licence-professionnelle/licence-economie-2" target="_blank">En savoir plus</a>
+</div>
+<div style="flex: 0;">
+<img src="parcours_files\logo_ut.png" alt="Licence Image" style="width: 100px; height: auto; margin-left: 20px;">
+</div>
+</div>
+</li>
+<hr>
+<li>
+<span style="color: black; font-weight: bold;">2017 - 2020</span><br>
+<strong>Baccalauréat ES option économie approfondie</strong> <span style="color: black; font-weight: bold;">Lycée François Rabelais</span><br>
+<i class="fas fa-location-dot"></i> Chinon, France
+</li>
+</ul>
+</div>
+</div>

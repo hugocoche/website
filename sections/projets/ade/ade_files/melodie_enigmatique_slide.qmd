@@ -1,0 +1,10 @@
+---
+title: "{{< fa file-pdf >}} Présentation du projet"
+description: "Vous pouvez accéder au slides de présentation du projet."
+date: "2024-01-25"
+categories: ["html", "reveal.js"]
+author: "Hugo Cochereau & Gabin Sengel & Adam Belamiri"
+image: "./headphones.jpg"
+---
+
+[{{< fa file-html >}} Accéder à la présentation](./slides/diapo_projet.html){.btn .btn-outline-primary .btn-lg .center target="_blank"}

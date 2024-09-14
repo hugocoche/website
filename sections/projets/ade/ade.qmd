@@ -1,0 +1,20 @@
+---
+title: "{{< fa music >}} Mélodie énigmatique"
+title-block-banner: true
+description: "Ce projet visait à identifier la musique la plus prometteuse en termes de popularité, en utilisant diverses méthodes d'analyse factorielle."
+image: "ade_files/headphones.jpg"
+categories: ["R", "Markdown", "Statistiques"]
+date: "2024-01-25"
+author: "Hugo Cochereau, Gabin Sengel & Adam Belamiri"
+format: 
+    html:
+        css: "../../sections_css/style_projets.css"
+listing: 
+    contents: ade_files
+    type: grid
+    grid-columns: 3
+    grid-item-border: true
+    categories: true
+---
+
+***

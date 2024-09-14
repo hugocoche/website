@@ -1,0 +1,203 @@
+/* css styles */
+
+.navbar {
+    display: flex;
+    align-items: center;
+    border-bottom: solid 3px #8B6508;
+    /* Ligne horizontale en bas de la navbar */
+}
+
+.navbar .navbar-brand {
+    display: flex;
+    /* Supprime les contraintes de dimensions maximales du logo */
+    max-height: none;
+    max-width: none;
+}
+
+/* animation du titre de la navbar */
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+
+.navbar .navbar-title {
+    animation: slideIn 10s ease-out;
+    border-left: solid 3px #8B6508;
+    padding-left: 5vh;
+    padding-right: 5vh;
+    color: white;
+}
+
+.navbar-title::before {
+    content: "Hugo";
+    display: block;
+  }
+  
+  .navbar-title::after {
+    content: "Cochereau";
+    display: block;
+  }
+
+.navbar .navbar-brand img {
+    width: auto;
+    height: 8vh;
+    margin-right: 5vh;
+    filter: brightness(0) invert(1);
+    /* pour changer la couleur du logo */
+    max-height: none;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+    animation: spin 5s linear infinite;
+    /* Applique l'animation de rotation en continu */
+}
+
+/* Définir l'animation de rotation */
+@keyframes spin {
+    from {
+        transform: rotateY(0deg);
+    }
+
+    to {
+        transform: rotateY(360deg);
+    }
+}
+
+.navbar :hover {
+    color: #8B6508;
+}
+
+.navbar .nav-link {
+    color: white;
+    position: relative;
+    transition: color 300ms;
+}
+
+.navbar .nav-link:hover {
+    text-shadow: 0 0 5px #8B6508;
+    /* ombre des textes de la navbar */
+}
+
+/* Animation de la barre de navigation */
+.navbar .nav-link::before,
+.navbar .nav-link::after {
+    content: '';
+    /* création d'un pseudo-élément vide*/
+    position: absolute;
+    /* positionnement toute à gauche */
+    left: 0;
+    height: 2px;
+    background-color: #8B6508;
+    /* couleur des lignes */
+    transition: width 500ms;
+    width: 0;
+    /* les lignes ont une longeur nulle si on ne survole pas le lien */
+}
+
+/* emplacement propre aux deux lignes (haut et bas) */
+.navbar .nav-link::before {
+    top: 0;
+}
+
+.navbar .nav-link::after {
+    bottom: 0;
+}
+
+.navbar .nav-link:hover::before,
+.navbar .nav-link:hover::after,
+.navbar .nav-link.active::before,
+.navbar .nav-link.active::after {
+    /* les lignes s'étendent sur toute la longeur du lien au survol */
+    /* Cet effet est appliqué sans survol à la section active */
+    width: 100%;
+}
+
+
+.navbar .nav-link.active {
+    color: #8B6508;
+}
+
+
+/* Masquer les icônes GitHub, LinkedIn et Email sur les petits écrans */
+@media (max-width: 769px) {
+    .quarto-navbar-tools {
+        display: none;
+    }
+
+    /* Afficher les icônes de recherche et de menu hamburger sur les petits écrans */
+    .navbar-toggler,
+    #quarto-search {
+        display: block;
+    }
+}
+
+/* Afficher les icônes GitHub, LinkedIn et Email sur les grands écrans */
+@media (min-width: 769px) {
+    .quarto-navbar-tools {
+        display: flex;
+    }
+}
+
+h2:hover {
+    color: #8B6508;
+    transition: 1s;
+    cursor: pointer;
+    text-shadow: 0 0 5px #8B6508;
+}
+
+h1:hover {
+    color: #8B6508;
+    transition: 1s;
+    cursor: pointer;
+    text-shadow: 0 0 5px #8B6508;
+}
+
+
+
+/* Pour les écrans plus grands */
+@media (min-width: 1200px) {
+    div.quarto-about-trestles {
+        margin-left: -20vw;
+        margin-right: -17vw;
+        align-items: center;
+    }
+}
+
+
+.nav-footer {
+    color: white;
+    font-size: 20px;
+    border-top: solid 3px #8B6508;
+}
+
+.nav-footer a {
+    color: white;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.nav-footer a:hover p:hover {
+    color: #8B6508;
+    text-shadow: 0 0 5px #8B6508;
+}
+
+
+/* personallisation des boutons */
+.btn:hover {
+    background-color: #343a40;
+    color: #8B6508;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+/* cookies */
+
+div.cookie-consent-footer a{
+    text-decoration: none;
+}

@@ -1,0 +1,22 @@
+---
+title: "Projets"
+backgroundcolor: "#fff8e7"
+format: 
+    html:
+        css: "sections_css/style_projets.css"
+listing: 
+    contents: projets
+    exclude:
+        title: [
+            "*Rapport pdf", "*Code source*", "*Présentation*"
+            ]
+    type: grid
+    grid-columns: 3
+    grid-item-border: true
+    categories: true
+    sort:
+        - "date desc"
+        - "title desc" 
+---
+
+***

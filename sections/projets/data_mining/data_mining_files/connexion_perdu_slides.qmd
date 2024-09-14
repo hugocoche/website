@@ -1,0 +1,10 @@
+---
+title: "{{< fa file-pdf >}} Présentation du projet"
+description: "Vous pouvez accéder au slides de présentation du projet."
+date: "2024-04-15"
+image: "./slides/img_diapo.png"
+categories: ["html", "reveal.js"]
+author: "Hugo Cochereau & Gregory Jaillet"
+---
+
+[{{< fa file-html >}} Accéder à la présentation](./slides/projet_churn.html){.btn .btn-outline-primary .btn-lg .center target="_blank"}

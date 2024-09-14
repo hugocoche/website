@@ -1,0 +1,74 @@
+project:
+  type: website
+
+lang: fr
+
+# codes exécutés en local
+execute:
+  freeze: auto
+
+website:
+  title: "Hugo Cochereau"
+  favicon: "imgs/hc.ico"
+  back-to-top-navigation: true
+  cookie-consent:
+    type: express # blocage des cookies
+    style: simple
+    palette: light
+    prefs-text: "🍪 Paramètres des cookies"
+    understand-text: "👍 J'accepte"
+    text-decoration: none
+    
+  # google-analytics:
+  #   anonymize-ip: true
+  navbar:
+    title: " " 
+    logo: "imgs/hc.png"
+    background: dark
+    foreground: "#8B6508"
+    search: true
+    tools:
+      - icon: github
+        href: https://github.com/hugocoche
+        target: _blank
+      - icon: linkedin
+        href: https://www.linkedin.com/in/hugo-cochereau-175448207
+        target: _blank
+      - icon: envelope
+        href: mailto:hugo.p-cochereau@outlook.fr
+        target: _blank
+    left:
+      - href: accueil.qmd
+        text: Accueil
+      - text: Parcours
+        href: sections/parcours.qmd
+      - text: Compétences
+        href: sections/competences.qmd
+      - text: Projets
+        href: sections/projets.qmd
+      - text: Contact
+        href: sections/contact.qmd
+    toggle-position: right
+    tools-collapse: false
+  page-footer:
+    background: dark
+    foreground: "#8B6508"
+
+    left: "© 2024, Hugo COCHEREAU"
+    right:
+      - text: "🛠️ Créé avec **Quarto**"
+        href: https://quarto.org/docs/reference/projects/websites.html
+        target: _blank
+    center:
+      - href: licence.qmd
+        text: "Licence : CC BY-NC-SA"
+        target: _blank
+
+format:
+  html:
+    theme: [lux]
+    css: assets/styles.css
+    toc: true
+
+include-in-header:
+  file: head.html

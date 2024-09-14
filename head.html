@@ -1,0 +1,18 @@
+<script>
+    window.addEventListener('load', function () {
+        document.getElementById("cc-nb-title").innerHTML = "🍪 Oh là là, des cookies !";
+        document.getElementById("cc-nb-text").innerHTML = "Nous utilisons des cookies pour analyser le trafic de notre site. Pas de panique, ils sont aussi inoffensifs que des biscuits faits maison et totalement optionnels.";
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const navbarTitle = document.querySelector(".navbar-title");
+        const text = navbarTitle.textContent;
+        navbarTitle.innerHTML = "";
+
+        for (let char of text) {
+            const span = document.createElement("span");
+            span.textContent = char;
+            navbarTitle.appendChild(span);
+        }
+    });
+</script>

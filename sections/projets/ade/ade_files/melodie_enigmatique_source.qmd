@@ -1,0 +1,1611 @@
+---
+title: "{{< fa code >}} Code source"
+title-block-banner: true
+description: "Vous pouvez retrouver le code source de cette étude en format html."
+date: "2024-01-25"
+author: "Hugo Cochereau, Gabin Sengel & Adam Belamiri"
+categories: "R"
+image: "../../../../imgs/code_img.png"
+---
+
+
+```{r setup, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = FALSE,
+                      warning = FALSE,
+                      message = FALSE)
+
+```
+
+```{r library}
+library(dplyr)
+library(tidyverse)
+library(readr)
+library(janitor)#clean_names
+library(missMDA)
+library(ggplot2)
+library(kableExtra)
+library(modelsummary)
+library(corrplot)
+library(factoextra)
+library(FactoMineR)
+library(gridExtra)
+```
+
+```{r fonctions}
+
+tab_contingence <- function(x,titre=NULL,...){
+  x<- addmargins(as.matrix(x), FUN = list(Total = sum), quiet = TRUE)
+
+  # Renommer la dernière ligne et la dernière colonne
+  rownames(x)[nrow(x)] <- "Total"
+  colnames(x)[ncol(x)] <- "Total"
+  x %>% 
+    kable() %>% 
+    kable_styling(
+      bootstrap_options = c("striped", "hover", "condensed"),
+      full_width = F, 
+      position = "center") 
+}
+
+tableau_contingence_latex <- function(x,titre=NULL,position = 'center',...){
+  x %>% 
+    kable(caption = titre,
+        align = "c",
+        ...) |> 
+  kable_styling(latex_options =  c("HOLD_position","scale_down","striped","hover"),
+                full_width = FALSE,
+                position = position) |> 
+    row_spec(0,
+           background = "cornflowerblue",
+           color = "white",
+           italic = FALSE,
+           bold = TRUE) %>% 
+    column_spec(1,
+                background = "blanchedalmond",
+                color = "black",
+                italic = TRUE)
+
+}
+
+
+graph_pointhtml <- function(tab, titre_legende = "Légende", titre = NULL, sous_titre = NULL, xlab = "x", ylab = "y", abs, ord, quali_var = NULL, cond = FALSE, ...) {
+  # color ou fill, pas les deux
+  aes_color_fill <- if (!is.null(quali_var)) {
+    aes_string(x = abs, y = ord, color = "quali_var")
+  } else {
+    aes_string(x = abs, y = ord)
+  }
+  
+  tab %>% 
+    ggplot(aes_string(x = abs, y = ord, color = "quali_var")) +
+    geom_point(aes_string(x = abs, y = ord), show.legend = cond) +
+    labs(x = xlab, y = ylab, title = titre, subtitle = sous_titre,
+         color = titre_legende) +  # Modifier le titre de la légende
+    theme(plot.title = element_text(color = "black", hjust = 0.5, face = "bold.italic"),
+          plot.subtitle = element_text(color = "red", hjust = 0.5, face = "bold.italic"),
+          panel.background = element_rect(fill = "lightgrey"),
+          plot.background = element_rect(fill = "lightgrey"),
+          legend.position = "right",
+          legend.background = element_rect(fill = "lightgrey"),
+          axis.title.x = element_text(color = "red", face = "bold.italic"),
+          axis.title.y = element_text(color = "red", face = "bold.italic", ...),
+          axis.text.x = element_text(color = "darkblue", face = "italic"),
+          axis.text.y = element_text(color = "darkblue", face = "italic"),
+          legend.text = element_text(color = "darkblue", face = "italic"),
+          legend.title = element_text( color = "black", hjust = 0.5, face = "bold.italic"))
+}
+
+
+
+contrigraph <- function(ACP,choice,axes=1,xlab=NULL,ylab="Contributions (en %)",titre="Etude des contributions",sous_titre =NULL,...){
+  fviz_contrib(ACP, choice = choice, axes = axes,...)+
+    labs(x=xlab,
+         y=ylab,
+         title = titre ,
+         subtitle = sous_titre)+
+    theme(plot.title = element_text(color ="black",
+                                    hjust = 0.5,
+                                    face = "bold.italic"),
+          plot.subtitle = element_text(color = "red",
+                                       hjust = 0.5,
+                                       face = "bold.italic"),
+          panel.background = element_rect(fill = "white"),
+          plot.background = element_rect(fill = "white"),
+          legend.position = "right",
+          legend.background = element_rect(fill = "white"),
+          axis.title.x = element_text(color = "red",
+                                      face = "bold.italic"),
+          axis.title.y = element_text(color = "red",
+                                      face = "bold.italic",...),
+          axis.text.x = element_text(color = "darkblue",
+                                     face = "italic"),
+          axis.text.y = element_text(color = "darkblue",
+                                     face = "italic"),
+          legend.text = element_text(color = "darkblue",
+                                     face = "italic"),
+          legend.title =element_text(color = "black",hjust = 0.5,
+                                     face = "bold.italic"))
+}
+
+
+
+
+
+
+
+ACPscreenplot <- function(ACP,titre="Etude des inerties",sous_titre=NULL,...){
+  fviz_screeplot(ACP,addlabels = TRUE)+
+    labs(title = titre,
+         subtitle = sous_titre,
+         x = "Dimensions",
+         y = "Pourcentage") +
+    theme(plot.title = element_text(color = "black",
+                                    hjust = 0.5,
+                                    face = "bold.italic"),
+          plot.subtitle = element_text(color = "red",
+                                       hjust = 0.5,
+                                       face = "bold.italic"),
+          panel.background = element_rect(fill = "white"),
+          plot.background = element_rect(fill = "white"),
+          legend.position = "right",
+          legend.background = element_rect(fill = "white"),
+          axis.title.x = element_text(color = "red",
+                                      face = "bold.italic"),
+          axis.title.y = element_text(color = "red",
+                                      face = "bold.italic",...),
+          axis.text.x = element_text(color = "darkblue",
+                                     face = "italic"),
+          axis.text.y = element_text(color = "darkblue",
+                                     face = "italic"),
+          legend.text = element_text(color = "darkblue",
+                                     face = "italic"),
+          legend.title = element_text(color = "black", hjust = 0.5,
+                                      face = "bold.italic"),
+                   panel.grid.major = element_line(color = "grey"),panel.border = element_rect(fill = NA,colour = "white"),rect = element_rect(fill = NA,colour = "white"))
+}
+
+
+
+
+
+
+
+mon_theme <- theme(plot.title = element_text(color ="black",
+                                             hjust = 0.5,
+                                             face = "bold.italic"),
+                   plot.subtitle = element_text(color = "red",
+                                                hjust = 0.5,
+                                                face = "bold.italic"),
+                   panel.background = element_rect(fill = "white"),
+                   plot.background = element_rect(fill = "white"),
+                   legend.position = "right",
+                   legend.background = element_rect(fill = "white"),
+                   axis.title.x = element_text(color = "red",
+                                               face = "bold.italic",hjust = 0.5),
+                   axis.title.y = element_text(color = "red",
+                                               face = "bold.italic",hjust = 0.5),
+                   axis.text.x = element_text(color = "darkblue",
+                                              face = "italic"),
+                   axis.text.y = element_text(color = "darkblue",
+                                              face = "italic"),
+                   legend.text = element_text(color = "darkblue",
+                                              face = "italic"),
+                   legend.title =element_text(color = "black",hjust = 0.5,
+                                              face = "bold.italic"),
+                   axis.ticks =element_line(color = "darkblue"),
+                   panel.grid.major = element_line(color = "grey",linetype = "dotted"),
+                   legend.box.background = element_rect(fill = "white",color = "white"),
+                   legend.key = element_rect(fill = "white"))
+
+matrice_cor <- function(tab,titre = NULL){
+  corrplot(cor(tab),type = "upper",addCoef.col = "black",
+           tl.cex = 0.75,number.cex = 0.75,tl.col = "black",
+           method = "square",
+           title = titre,
+           diag = FALSE)
+  
+}
+
+```
+
+# Sommaire {-}
+
+-   I)  [Introduction](#introduction)    
+
+    -   1) [Description de la base de données]
+    -   2) [Premières visualisations]
+    
+-   II) [Quelques observations](#quelques-observations)  
+
+    -   1) [Résumé des variables quantitatives]
+    -   2) [Répartition des featurings]
+    -   3) [Répartition temporelle]
+    -   4) [Popularité des morceaux] 
+    -   5) [Premiers éléments de conclusion]                                                                               
+
+-   II) [ACP](#acp)
+
+    -   1) [Présentation de l'analyse par composantes principales]
+    -   2) [Répartition des musiques parmi les variables actives]
+    -   3) [Matrice des corrélations]
+    -   4) [Mise en place de l'ACP]
+    
+-   IV) [AFC](#afc)
+
+    -   1) [Présentation de l'analyse factorielle des correspondances]
+    -   2) [Création des classes pour la variable in_spotify_charts]
+    -   3) [Répartition de nos individus dans les variables actives]
+    -   4) [Profils colonnes]
+    -   5) [Profils lignes]
+    -   6) [Mise en place de l'AFC]  
+    
+-   V) [ACM](#acm)  
+                                                                                                                    
+    -   1) [Etude des inerties]
+    -   2) [Etude des variables et de leurs modalités]
+    -   3) [Etude des individus]
+    -   4) [Classification]
+    -   5) [Conclusion de l'ACM et de la Classification]
+    
+-   [Mais alors quelle est la musique idéale pour plaire aux auditeurs ?](#mais-alors-quelle-est-la-musique-idéale-pour-plaire-aux-auditeurs)
+
+
+
+
+
+```{r importation}
+df<-read_delim("data_frame_dossier/spotify-2023.csv",delim = ",",
+               locale = locale(encoding = "latin1"))
+
+df <- clean_names(df,"snake")
+nom_musique <- df$track_name
+```
+
+# Introduction {.unnumbered}
+
+
+```{r echo=FALSE,warning=FALSE,message=FALSE}
+
+Description <- c(
+  "Le nom de la musique",
+  "Le nom des artistes ayant collaboré à la création de la musique",
+  "Le nombre d'artistes qui ont contribué à la chanson.",
+  "L'année de sortie de la chanson.",
+  "Le mois de sortie de la chanson.",
+  "Le jour du mois de sortie de la chanson.",
+  "Le nombre de playlists Spotify auxquelles la chanson est incluse.",
+  "La présence et le classement de la chanson sur les classements Spotify..",
+  "Le nombre total de streams (écoutes) de la chanson sur Spotify.",
+  "Le nombre de playlists Apple Music auxquelles la chanson est incluse.",
+  "La présence et le classement de la chanson sur les classements Apple Music.",
+  "Le nombre de playlists Deezer auxquelles la chanson est incluse.",
+  "La présence et le classement de la chanson sur les classements Deezer.",
+  "La présence et le classement de la chanson sur les classements Shazam.",
+  "Beats per minute (Battements par minute), une mesure du tempo de la chanson. Il indique à quelle vitesse la chanson est jouée.",
+  "La tonalité de la chanson, généralement exprimée en termes de notes de musique.",
+  "Le mode de la chanson, qui peut être majeur ou mineur. Cela indique l'ambiance musicale de la chanson.",
+  "Pourcentage indiquant à quel point la chanson est adaptée à la danse. Plus le pourcentage est élevé, plus la chanson est dansante.",
+  "Positivité du contenu musical de la chanson. Un pourcentage élevé indique une chanson joyeuse et positive.",
+  "Niveau d'énergie perçu de la chanson. Un pourcentage élevé indique une chanson énergique.",
+  "La quantité de son acoustique dans la chanson.",
+  "La quantité de contenu instrumental dans la chanson. Un pourcentage élevé indique une chanson principalement instrumentale avec peu de paroles.",
+  "La présence d'éléments de performance en direct dans la chanson. Un pourcentage élevé peut indiquer des performances en direct.",
+  "La quantité de mots parlés dans la chanson par rapport à la musique. Un pourcentage élevé indique plus de paroles parlées que de chanté."
+)
+
+
+
+  
+cbind(colnames(df),Description) |> 
+  tableau_contingence_latex(col.names=c("Variables","Description"))
+
+
+
+```
+
+## Premières visualisations {.unnumbered}
+
+
+```{r description}
+head(df[,1:5]) |> tableau_contingence_latex()
+
+```
+
+```{r vis_NA}
+Gestion_NA <- is.na(df) |> colSums() 
+```
+
+
+```{r type_var,echo=FALSE,message=FALSE,warning=FALSE}
+
+df$streams <- as.double(df$streams)
+df$key <- as.factor(df$key)
+df$mode <- as.factor(df$mode)
+```
+
+```{r NA_Streams, echo=FALSE,message=FALSE,warning=FALSE}
+#La rajouter manuellement reviendrait à ajouter le nombre de stream récolté à une
+#date ultérieur à la date de récolte des données, nous allons donc supprimer cette observation.
+#which(is.na(df$streams))
+df <- df[-575,]
+
+```
+
+
+
+```{r gestions des doublons,echo=FALSE,warning=FALSE,message=FALSE}
+
+#names(which(df$track_name |> table()>1))
+# 10 noms musiques ont un doublon, le nom des musiques n'est donc actuellement pas éligible pour identifier les observations
+
+#Combinons le nom de la musique et des artistes
+df <- df |>
+  mutate(track_and_artist_name = paste(track_name,"_",artist_s_name)) |>
+  #on crée la nouvelle variable
+  select(track_and_artist_name,everything()) |> 
+  #on place la nouvelle variable en 1ère position
+  select(-track_name,-artist_s_name) 
+#on supprime ces deux colonnes
+
+
+#names(which(df$track_and_artist_name |> table()>1))
+#il reste encore 4 musiques en doublons, nous allons les différenciées manuellement
+
+# Il existe une version album et single de ce titre
+#which(df$track_and_artist_name=="About Damn Time _ Lizzo")
+df[373,1] <- "About Damn Time_Album_version"
+df[764,1] <- "About Damn Time_Single_version"
+
+#which(df$track_and_artist_name=="SPIT IN MY FACE! _ ThxSoMch")
+#checké sur spotify (existence d'une version rapide que l'on peut voir au travers de la variable BPM)
+df[483,1] <- "SPIT IN MY FACE_speed_version"
+
+#which(df$track_and_artist_name=="Take My Breath _ The Weeknd")
+# Une version album et single
+df[513,1] <- "Take My Breath_album_version"
+df[616,1] <- "Take My Breath_single_version"
+
+
+
+##SNAP
+
+#which(df$track_and_artist_name=="SNAP _ Rosa Linn")
+# Une version album et single
+df[179,1] <- "SNAP_single_version"
+df[873,1] <- "SNAP_album_version"
+
+df <- df |> as_tibble() |> 
+  column_to_rownames(var = "track_and_artist_name")
+```
+
+```{r df_stat_des}
+df_stat_des <- df 
+df_stat_des <- df_stat_des |> mutate(key = case_when(is.na(key)~"?",
+                                                     TRUE~key))
+df_stat_des$key <- as.factor(df_stat_des$key) 
+
+```
+
+
+
+```{r }
+MFM <- order(-df$streams)[1:10]
+data_stream <- data.frame(nom = nom_musique[MFM], stream = df$streams[MFM])
+  
+data_stream %>%
+  ggplot(aes(y = fct_reorder(nom, stream), x = stream)) +
+  geom_bar(stat = "identity",color = "grey",width = 0.4, fill = "cornflowerblue") +
+  labs(title = "Nombre d'écoutes \n des 10 musiques les plus écoutées",
+       subtitle = "sur spotify en 2023",
+       x = "Nombre d'écoutes",
+       y = "") +
+  mon_theme
+```
+
+
+
+
+
+# Quelques observations {-}
+
+```{r def_var}
+quanti <- which(sapply(df_stat_des,FUN = is.numeric)==TRUE)
+
+quali <- which(sapply(df_stat_des,FUN = is.factor)==TRUE)
+```
+
+## Résumé des variables quantitatives {-} 
+
+
+
+```{r min_stream}
+
+df <- df[-124,]
+df_stat_des <- df_stat_des[-118,]
+```
+
+## Répartition des featurings {-}
+
+```{r}
+data.frame(`nombre d'artistes` = names(table(df_stat_des$artist_count)), Proportion = as.numeric(round(prop.table(table(df_stat_des$artist_count)),2)))  |> 
+  t() |> 
+  kable(align = "c") |>
+  kable_styling(position = "center")|> 
+    row_spec(1,
+           background = "cornflowerblue",
+           color = "white",
+           italic = FALSE,
+           bold = FALSE) %>% 
+    column_spec(1,
+                background = "cornflowerblue",
+                color = "white",
+                italic = TRUE,
+                bold = FALSE)
+  
+
+```
+
+
+
+## Répartition temporelle {-}
+
+
+
+
+```{r}
+data_frame(df_stat_des[,2]) %>% 
+  ggplot() +
+  aes(x= df_stat_des[,2])+
+  geom_histogram(color = "white",fill = "orange",bins = 20,position = "dodge")+
+  labs(title = "Répartition des musiques selon leur année de sortie",
+       x="Années de sortie",
+       y = "Effectis")+
+  mon_theme
+```
+
+
+
+```{r repart_temp,out.height="100%",out.width="100%"}
+mois <- c("janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre")
+
+df <- df |> 
+  mutate(released_month_char = mois[released_month]) |> 
+  relocate(released_month_char,.after = released_month)
+
+df_stat_des <- df_stat_des |> 
+  mutate(released_month_char = mois[released_month]) |> 
+  relocate(released_month_char,.after = released_month)
+
+
+ggpubr :: ggarrange(
+data.frame(nom = names(table(df_stat_des[, 4])), effectif = as.numeric(table(df_stat_des[, 4]))) |>
+    ggplot(aes(y = fct_reorder(nom, effectif), x = effectif)) +
+    geom_bar(stat = "identity",color = "grey",width = 0.4, fill = "aquamarine") +
+    labs(title = "Répartition des musiques \n selon leur mois de sortie",
+         x = "",
+         y="") +
+    mon_theme,
+
+data_frame(df_stat_des[,5]) %>% 
+  ggplot() +
+  aes(x= df_stat_des[,5])+
+  geom_histogram(color = "white",fill = "lightblue",bins = 31,position = "dodge")+
+  labs(title = "Répartition des musiques \n selon leur jour de sortie",
+       x="Jours de sortie",
+       y = "Effectis")+
+  mon_theme,
+ ncol = 2)
+
+
+
+```
+
+
+
+## Popularité des morceaux {-}
+
+```{r}
+#Les variables charts représentent des classements, le fait que ces variables soient quantitatives pourraient poser des problèmes d'interprétation, ainsi, il faut trouver un moyen de les rendre interprétable
+
+# Utiliser des fonctions crées à partir de dplyr si on les utilise dans des commmandes issues de dplyr
+top_chart <- function(x) {
+  case_when(
+    x == 0 ~ 'pas classé',
+    between(x, 1, 10) ~ 'Top 10',
+    between(x, 11, 50) ~ 'Top 50',
+    between(x, 51, 200) ~ 'Top 200',
+    between(x, 101, 1000000) ~ '> 200',
+    TRUE ~ '?'
+  )
+}
+
+df_stat_des <- df_stat_des |> 
+  mutate(across(ends_with("charts"), top_chart, .names = "top_{.col}")) |> 
+  # on créer de nouvelles dont le nom sera "top_{.col}" en appliquant la fonction
+  # top_chart au variable dont le nom se termine par charts 
+  select(everything())#on sélectionne toutes les variables de df (car on attribue le nouveau df à df, il faut donc garder toutes les anciennes variables et simplement ajouter les nouvelles)
+
+```
+
+
+```{r fig.height=4,fig.width=8}
+
+vec_couleur <- rainbow(6)
+ggpubr::ggarrange(
+
+df_stat_des %>%
+  ggplot(aes(x = streams, y = top_in_shazam_charts, fill = as.factor(top_in_shazam_charts))) +
+  geom_boxplot(show.legend = FALSE, width = 0.5, coef = 50) +
+  labs(x = "Nombre de streams", y = "",
+       title = "Shazam") +
+  scale_fill_manual(values = vec_couleur) +
+  mon_theme,
+
+df_stat_des %>%
+  ggplot(aes(x = streams, y = top_in_deezer_charts, fill = as.factor(top_in_deezer_charts))) +
+  geom_boxplot(show.legend = FALSE, width = 0.5, coef = 50) +
+  labs(x = "Nombre de streams", y = "",
+       title = "Deezer") +
+  scale_fill_manual(values = vec_couleur) +
+  mon_theme,
+
+df_stat_des %>%
+  ggplot(aes(x = streams, y = top_in_apple_charts, fill = as.factor(top_in_apple_charts))) +
+  geom_boxplot(show.legend = FALSE, width = 0.5, coef = 50) +
+  labs(x = "Nombre de streams", y = "",
+       title = "Apple music") +
+  scale_fill_manual(values = vec_couleur) +
+  mon_theme,
+
+df_stat_des %>%
+  ggplot(aes(x = streams, y = top_in_spotify_charts, fill = as.factor(top_in_spotify_charts))) +
+  geom_boxplot(show.legend = FALSE, width = 0.5, coef = 50) +
+  labs(x = "Nombre de streams", y = "",
+       title = "Spotify") +
+  scale_fill_manual(values = vec_couleur) +
+  mon_theme,
+
+ncol = 2, nrow = 2)
+
+  
+  
+
+#nrow = 2, ncol = 2
+#)
+```
+
+
+
+
+## Premiers éléments de conclusion {-}
+
+
+
+# ACP {-}
+
+## Présentation de l'analyse par composantes principales {-}
+
+
+```{r echo=FALSE}
+
+df_ACP<-read_delim("data_frame_dossier/spotify-2023_nettoyer.csv",delim = ",",
+               locale = locale(encoding = "latin1"))
+
+df_ACP <- clean_names(df_ACP,"snake")
+df_ACP$streams <- as.double(df_ACP$streams)
+df_ACP$key <- as.factor(df_ACP$key)
+df_ACP$mode <- as.factor(df_ACP$mode)
+df_ACP <- df_ACP[-575,]
+#names(which(df$track_name |> table()>1))
+
+```
+
+
+```{r echo=FALSE}
+#Combinons le nom de la musique et des artistes
+
+df_ACP <- df_ACP[,-1]
+
+
+
+
+top_chart <- function(x) {
+  case_when(
+    x == 0 ~ 'pas classé',
+    between(x, 1, 10) ~ 'Top 5',
+    between(x, 11, 20) ~ 'Top 20',
+    between(x, 21,50) ~ 'Top 50',
+    between(x, 51, 1000) ~ '>50',
+    TRUE ~ '?'
+  )
+}
+  
+df_ACP <- df_ACP |> 
+  mutate(across(ends_with("charts"), top_chart, .names = "top{.col}")) |> 
+  # on créer de nouvelles dont le nom sera "top_{.col}" en appliquant la fonction
+  # top_chart au variable dont le nom se termine par charts 
+  select(everything())
+
+
+quanti <- which(sapply(df_ACP,FUN = is.numeric)==TRUE)
+quali <- which(sapply(df_ACP,FUN = is.character)==TRUE)
+quali <- append(quali,which(sapply(df_ACP,is.factor)==TRUE))
+```
+
+```{r echo=FALSE}
+quanti_sup<-c(6,8,11,13,14)
+colnames(df_ACP)[25] <- "top_spotify"
+```
+
+
+```{r echo=FALSE}
+resacp<-PCA(df_ACP,quali.sup=c(quali),quanti.sup=quanti_sup,graph = FALSE)
+```
+
+## Répartition des musiques parmi les variables actives {-}
+
+```{r}
+
+ggpubr::ggarrange(
+
+data_frame(df[,23]) %>% 
+  ggplot() +
+  aes(x= df[,23])+
+  geom_histogram(color = "white",fill = "lightgreen",bins = 20,position = "dodge")+
+  labs(title = "",
+       x="Speechiness (en %)",
+       y = "Effectis")+
+  mon_theme,
+
+data_frame(df[,22]) %>% 
+  ggplot() +
+  aes(x= df[,22])+
+  geom_histogram(color = "white",fill = "lightblue",bins = 20,position = "dodge")+
+  labs(title = "",
+       x="liveness (en %)",
+       y = "Effectis")+
+  mon_theme,
+
+data_frame(df[,21]) %>% 
+  ggplot() +
+  aes(x= df[,21])+
+  geom_histogram(color = "white",fill = "orange",bins = 20,position = "dodge")+
+  labs(title = "",
+       x="Instrumentalness (en %)",
+       y = "Effectis")+
+  mon_theme,
+
+data_frame(df[,20]) %>% 
+  ggplot() +
+  aes(x= df[,20])+
+  geom_histogram(color = "white",fill = "red",bins = 20,position = "dodge")+
+  labs(title = "",
+       x="Acousticness (en %)",
+       y = "Effectis")+
+  mon_theme,
+  data_frame(df[,19]) %>% 
+  ggplot() +
+  aes(x= df[,19])+
+  geom_histogram(color = "white",fill = "purple",bins = 20,position = "dodge")+
+  labs(title = "",
+       x="Energy (en %)",
+       y = "Effectis")+
+  mon_theme,
+
+  data_frame(df[,18]) %>% 
+  ggplot() +
+  aes(x= df[,18])+
+  geom_histogram(color = "white",fill = "pink",bins = 20,position = "dodge")+
+  labs(title = "",
+       x="Valence (en %)",
+       y = "Effectis")+
+  mon_theme,
+
+
+data_frame(df[,17]) %>% 
+  ggplot() +
+  aes(x= df[,17])+
+  geom_histogram(color = "white",fill = "brown",bins = 20,position = "dodge")+
+  labs(title = "",
+       x="Danceability (en %)",
+       y = "Effectis")+
+  mon_theme,
+
+data_frame(df[,14]) %>% 
+  ggplot() +
+  aes(x= df[,14])+
+  geom_histogram(color = "white",fill = "aquamarine",bins = 20,position = "dodge")+
+  labs(title = "",
+       x="Bpm",
+       y = "Effectis")+
+  mon_theme,
+
+ncol = 4,nrow=2
+
+)
+```
+
+
+
+
+## Matrice des corrélations {-}
+
+```{r}
+matrice_cor(round(cor(df_ACP[,quanti[-c(1,3,4,6,9,11,12)]]),2))
+```
+
+
+
+## Mise en place de l'ACP {-}
+
+
+### Inertie des axes {-}
+
+```{r}
+ACPscreenplot(resacp,titre = "Inertie des dimensions")
+```
+
+
+```{r}
+resacp$eig |> round(2) |> t() |> round(2) |> tableau_contingence_latex()
+
+```
+
+
+
+
+
+
+## Etude des variables {-}
+
+
+### Nuage des variables {-}
+
+
+```{r}
+
+fviz_pca_var(resacp,
+             cex = 0.7,
+             col.var = "cos2",
+             gradient.cols = c("grey","darkblue"),
+             select.var = list("cos2"=0.2),
+             repel = TRUE)+
+  mon_theme+
+  theme(rect = element_rect(fill = NA,color = "white"))+
+  labs(title = "Cercle des corrélations",
+       subtitle = "sur le plan (1,2)")
+
+```
+
+
+
+### Contributions {-}
+
+```{r}
+contriACPvar1 <- resacp$var$contrib[,1] |> sort(decreasing = TRUE)
+
+
+contriACPvar2 <- resacp$var$contrib[,2] |> sort(decreasing = TRUE)
+
+ggpubr::ggarrange(
+contrigraph(resacp,choice = 'var',sous_titre = "Axe 1")+
+  theme(rect = element_rect(fill = NA,color = "white")),
+contrigraph(resacp,choice = 'var',sous_titre = "Axe 2",axes=2)+
+  theme(rect = element_rect(fill = NA,color = "white")),
+ncol=2)
+
+
+```
+
+
+
+
+### Conclusion sur les axes {-}
+
+
+
+
+
+## Etude des individus {-}
+
+
+### Nuage des individus {-}
+
+
+```{r}
+
+fviz_pca_ind(resacp,
+             habillage = 25,
+             geom.ind = c('point'))+
+  mon_theme+
+  theme(rect = element_rect(fill = NA,color = "white"))+
+  labs(title = "Nuage des Individus")
+
+```
+
+
+
+### Contributions {-}
+
+
+```{r}
+contri_ind_ax1<-resacp$ind$contrib[,c(1)] %>% sort(decreasing = TRUE)
+tab_contri <- rbind(rownames(df)[as.integer(names(contri_ind_ax1[1:10]))],round(contri_ind_ax1[1:10],2)) %>% t() |> data.frame() 
+colnames(tab_contri) <- c("Musique","Contributions (en %)")
+tab_contri |>   tableau_contingence_latex() 
+
+```
+
+
+```{r}
+
+contri_ind_ax2<-resacp$ind$contrib[,c(2)] %>% sort(decreasing = TRUE)
+tab_contri <- rbind(rownames(df)[as.integer(names(contri_ind_ax2[1:10]))],round(contri_ind_ax2[1:10],2)) %>% t() |> data.frame() 
+colnames(tab_contri) <- c("Musique","Contributions (en %)")
+tab_contri |>   tableau_contingence_latex() 
+```
+
+
+
+
+## Conclusion de l'ACP {-}
+
+
+
+
+# AFC {-}
+
+## Présentation de l'analyse factorielle des correspondances {-}
+
+```{r}
+dfAFC <- read.csv("data_frame_dossier/spotify-2023_nettoyer.csv",
+               header = TRUE,sep = ",",
+               fileEncoding = "latin1")
+
+rownames(dfAFC) <- dfAFC$track_and_artist_name
+dfAFC <- dfAFC[,-c(1,2)]
+```
+
+
+
+```{r}
+
+dfAFC <- dfAFC[order(dfAFC$streams), ] #on trie les musiques dans l'odre croissant des données
+dfAFC <- dfAFC[-c(1),] #on enlève la première donné qui est vraiment abberante
+```
+
+```{r}
+dfAFC$saison <- ifelse(dfAFC$released_month_char %in% c("décembre","janvier","février"),"hiver",
+                    ifelse(dfAFC$released_month_char %in% c("mars","avril","mai"),"printemps",
+                    ifelse(dfAFC$released_month_char %in% c("juin","juillet","août"),"été",
+                    ifelse(dfAFC$released_month_char %in% c("octobre","septembre","novembre"),"automne",NA))))
+
+```
+
+```{r}
+#Création des charts 
+classes_chart <- matrix(c(
+  "[1;5]", "[6;20]", "[21;50]", "[51,200]", "pas classé",
+  "Top 5", "Top 20", "Top 50", "> 50", "0"), nrow = 2, byrow = TRUE)
+rownames(classes_chart)<-c("Valeur de la variable","Classe associée")
+```
+
+
+
+## Création des classes pour la variable in_spotify_charts {-}
+
+
+
+```{r}
+dfAFC$top_spotify <- case_when(
+    dfAFC$in_spotify_charts == 0 ~ 'pas classé',
+    between(dfAFC$in_spotify_charts, 1, 5) ~ 'Top 5',
+    between(dfAFC$in_spotify_charts, 6, 20) ~ 'Top 20',
+    between(dfAFC$in_spotify_charts, 21, 50) ~ 'Top 50',
+    between(dfAFC$in_spotify_charts, 51, 147) ~ '> 50',
+    TRUE ~ 'pas classé')
+
+classes_chart |> kable(align="c") |>
+  kable_styling( 
+    full_width = FALSE,
+    position = "center",
+    latex_options =  c("striped", "hover","HOLD_position")
+    ) |> column_spec(1,background = "cornflowerblue",color = "white",bold = TRUE,italic = TRUE)  
+```
+
+
+
+## Répartition de nos individus dans les variables actives {-}
+
+```{r}
+
+ggpubr::ggarrange(
+data.frame(nom = names(table(dfAFC$top_spotify)), effectif = as.numeric(table(dfAFC$top_spotify)))%>%
+    ggplot(aes(y = fct_reorder(nom, effectif), x = effectif)) +
+    geom_bar(stat = "identity",color = "grey",width = 0.4, fill = "red") +
+    labs(title = "Classement sur Spotify",
+         y="",
+         x = "Effectif") + mon_theme,
+
+data.frame(nom = names(table(dfAFC$saison)), effectif = as.numeric(table(dfAFC$saison)))%>%
+    ggplot(aes(y = fct_reorder(nom, effectif), x = effectif,color = nom)) +
+    geom_bar(stat = "identity",color = "grey",width = 0.4, fill = "red") +
+    labs(title = "Saison",
+         y="",
+         x = "Effectif") + mon_theme,
+ncol = 2)
+```
+
+
+
+
+```{r}
+chart_saison=table(dfAFC$top_spotify,dfAFC$saison) %>% 
+  as.data.frame.matrix ()
+chart_saison <- chart_saison[c("Top 5", "Top 20", "Top 50", "> 50", "pas classé"), , drop = FALSE]
+
+chart_saison |> tableau_contingence_latex()
+```
+
+
+
+```{r}
+
+chi2<-chisq.test(chart_saison)
+tab<-round(c(chi2$statistic,chi2$parameter,chi2$p.value),4)
+names(tab)[3]<-"p.value"
+tab<-as.matrix(tab)
+tab %>% kable(align="c") |> 
+  kable_styling(latex_options = c("striped","hover","HOLD_position"),position = "center",full_width = FALSE) |> 
+  column_spec(1,background = "cornflowerblue",color="white",bold=T,italic=T)
+```
+
+
+```{r}
+round(chi2$expected,3) |> tableau_contingence_latex()
+```
+
+
+```{r}
+contrib<-chi2$residuals^2 %>% 
+  proportions() %>% 
+  addmargins() %>% 
+  round(4)*100
+
+colnames(contrib)[5]<-"Total"
+rownames(contrib)[6]<-"Total"
+contrib %>% kable() %>%
+   kable_styling( 
+    full_width = FALSE,
+    position = "center",
+     bootstrap_options = c("striped", "hover")
+    ) %>%
+  column_spec(2,color=ifelse(contrib[,1]<5,"green",
+                             ifelse(contrib[,1]<10,"orange","red"))) %>%
+  column_spec(3,color=ifelse(contrib[,2]<5,"green",
+                             ifelse(contrib[,2]<10,"orange","red"))) %>%
+  column_spec(4,color=ifelse(contrib[,3]<5,"green",
+                             ifelse(contrib[,3]<10,"orange","red"))) %>%
+  column_spec(5,color=ifelse(contrib[,4]<5,"green",
+                             ifelse(contrib[,4]<10,"orange","red"))) %>%
+  column_spec(6,color=ifelse(contrib[,5]<5,"green",
+                             ifelse(contrib[,5]<10,"orange","red"))) |> 
+  row_spec(0,bold=TRUE,background = "cornflowerblue",color = "white",italic = T) |> 
+  column_spec(1,bold=TRUE,background = "blanchedalmond",color = "black",italic = T)
+
+```
+
+
+## Profils colonnes {-}
+
+
+
+
+```{r}
+col<- chart_saison %>% as.matrix() %>% addmargins(margin=2) %>% proportions(margin=2) %>% addmargins(margin=1) %>% round(4)*100
+colnames(col)[5]<-"Profil moyen"
+rownames(col)[6]<-"Total"
+col %>% tableau_contingence_latex()
+```
+
+
+```{r}
+ggplotcol<-tibble(Chart=as_factor(rownames(chart_saison)),chart_saison) %>% pivot_longer(cols=2:5,names_to = "Saison",values_to="Effectif") 
+ggplot(data=ggplotcol,aes(x=Saison,y=Effectif,fill=Chart)) + 
+  geom_bar(stat="identity",position="fill")+
+  labs(x="",y="",title = "Répartition des profils colonnes")+mon_theme
+```
+
+
+
+## Profils lignes {-}
+
+```{r}
+row<- chart_saison %>% as.matrix() %>% addmargins(margin=1) %>% proportions(margin=1) %>% addmargins(margin=2) %>% round(4)*100
+colnames(row)[5]<-"Total"
+rownames(row)[6]<-"Profil moyen"
+row %>% tableau_contingence_latex()
+```
+
+
+```{r}
+ggplotrow<-tibble(Chart=as_factor(rownames(chart_saison)),chart_saison) %>% pivot_longer(cols=2:5, names_to ="Saison", values_to="Effectif")
+ggplot(ggplotrow,aes(x=Chart,y=Effectif,fill=Saison))+geom_bar(stat="identity",position = "fill") +
+  labs(x="",y="",title = "Répartition des profils lignes") + coord_flip() +mon_theme
+```
+
+
+
+## Mise en place de l'AFC {-}
+
+```{r}
+#mise en place de l'AFC
+AFC_chart_saison<-CA(chart_saison,graph=F)
+```
+
+### Inertie et part de variance des axes {-}
+
+```{r}
+#Affichage des Inertie
+ACPscreenplot(AFC_chart_saison,titre = "Inertie des dimensions")
+tab <- AFC_chart_saison$eig[,-1]
+```
+
+
+```{r}
+#Affichage des parts de variance par dimension
+rownames(tab)<-c("F1", "F2", "F3")
+colnames(tab)<-c("Parts de Variance", "Parts cumulées")
+tab |> round(2) |>  t() |> 
+  tableau_contingence_latex() 
+```
+
+
+
+## Nuage des modalités {-} 
+
+```{r}
+fviz_ca_biplot(AFC_chart_saison, 
+               col.col = "cos2", 
+               col.row ="cos2",
+               shape.row = 20,
+               shape.col = 3,
+               #gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
+               gradient.cols = c("grey", "darkblue"),
+               title ="Qualités de représentations"
+) + mon_theme+
+  theme(rect= element_rect(fill = NA,colour = "white"))
+```
+
+
+
+## Etude du 1er axe {-}
+
+```{r}
+fig1<-fviz_contrib(AFC_chart_saison,choice="col") + ggtitle("Contributions des saisons.",subtitle="à la construction de l'axe 1")+labs(x=" ")
+fig2<-fviz_contrib(AFC_chart_saison,choice="row") + ggtitle("Contributions des classements.",subtitle ="à la construction de l'axe 1")+labs(x=" ")
+ggpubr::ggarrange(fig1+mon_theme+theme(panel.border = element_rect(fill = NA,colour = "white"),rect = element_rect(fill = NA,colour = "white")),fig2+mon_theme+theme(panel.border = element_rect(fill = NA,colour = "white"),rect = element_rect(fill = NA,colour = "white")),ncol=2)
+```
+
+```{r}
+tab1<-AFC_chart_saison$col$contrib[,1] %>% sort(decreasing = TRUE)
+tab1<-cbind(tab1,cumsum(tab1)) %>% round(1) %>% t()  
+rownames(tab1)<-c("Contributions","Contributions cumulées")
+tab1 %>% tableau_contingence_latex()
+```
+
+```{r}
+tab11<-AFC_chart_saison$row$contrib[,1] %>% sort(decreasing = TRUE)
+tab11<-cbind(tab11,cumsum(tab11)) %>% round(1) %>% t()  
+rownames(tab11)<-c("Contributions","Contributions cumulées")
+tab11 %>% tableau_contingence_latex()
+```
+
+
+
+## Etude du second axe {-}
+
+```{r}
+fig11<-fviz_contrib(AFC_chart_saison,choice="col",axes=2) + ggtitle("Contributions des saisons",subtitle="à la construction de l'axe 2")+labs(x=" ")
+fig22<-fviz_contrib(AFC_chart_saison,choice="row",axes=2) + ggtitle("Contributions des classements",subtitle = "à la construction de l'axe 2")+labs(x=" ")
+ggpubr::ggarrange(fig11+mon_theme+theme(panel.border = element_rect(fill = NA,colour = "white"),rect = element_rect(fill = NA,colour = "white")),fig22+mon_theme+theme(panel.border = element_rect(fill = NA,colour = "white"),rect = element_rect(fill = NA,colour = "white")),ncol=2)
+```
+
+```{r}
+tab2<-AFC_chart_saison$col$contrib[,2] %>% sort(decreasing = TRUE)
+tab2<-cbind(tab2,cumsum(tab2)) %>% round(1) %>% t()  
+rownames(tab2)<-c("Contributions","Contributions cumulées")
+tab2 %>% tableau_contingence_latex()
+```
+
+```{r}
+tab22<-AFC_chart_saison$row$contrib[,2] %>% sort(decreasing = TRUE)
+tab22<-cbind(tab22,cumsum(tab22)) %>% round(1) %>% t()  
+rownames(tab22)<-c("Contributions","Contributions cumulées")
+tab22 %>% tableau_contingence_latex()
+```
+
+
+
+## Conclusion de l'AFC {-}
+
+
+
+
+# ACM {-}
+
+
+
+```{r ajout_var_df_ACM}
+
+#Les variables charts représentent des classements, le fait que ces variables soient quantitatives pourraient poser des problèmes d'interprétation, ainsi, il faut trouver un moyen de les rendre interprétable
+
+# Utiliser des fonctions crées à partir de dplyr si on les utilise dans des commmandes issues de dplyr
+top_chart <- function(x) {
+  case_when(
+    x == 0 ~ 'pas classé',
+    between(x, 1, 5) ~ 'Top 5',
+    between(x, 5.1, 20) ~ 'Top 20',
+    between(x, 20.0001, 50) ~ 'Top 50',
+    between(x, 50.000001, 80000) ~ '>50',
+    TRUE ~ '?'
+  )
+}
+
+
+df <- df |> 
+  mutate(saison = case_when(released_month_char %in%
+                              c("décembre","janvier","février")~"hiver",
+                            released_month_char %in%
+                              c("mars","avril","mai")~"printemps",
+                            released_month_char %in% c("juin","juillet","août")~"été",
+                            TRUE~"automne"),.after = released_month_char) |>
+  select(everything())
+
+
+# Créarion d'une variable featuring
+df <- df |> 
+  mutate(feat = case_when(artist_count>1~"oui",
+                          TRUE~"non"),.after = artist_count) |> 
+  select(everything())
+
+
+
+ 
+# Les clés n'étant pas forcément connu de tous, on va rendre cette variable plus claire.
+
+df <- df |> 
+  mutate(tonalite = case_when(key %in% c("C","C#","D","D#")~"registre grave",
+                              key %in% c("E","F","F#","G")~"registre moyen",
+                              key %in% c("A","A#","B","G#")~"registre aigu",
+                              TRUE~"registre ?"),.after = key) |> 
+  select(everything())
+
+
+normaliserx100 <- function(x){
+  round(((x-min(x))/(max(x)-min(x)))*100,4)
+}
+#Création de variable qualitative ordonnée pour plusieurs caractéristiques des musiques
+
+
+
+
+df <- df |> 
+  mutate(across(ends_with("charts"), top_chart, .names = "top_{.col}")) |> 
+  # on créer de nouvelles dont le nom sera "top_{.col}" en appliquant la fonction
+  # top_chart au variable dont le nom se termine par charts 
+  select(everything())#on sélectionne toutes les variables de df (car on attribue le nouveau df à df, il faut donc garder toutes les anciennes variables et simplement ajouter les nouvelles)
+
+
+
+
+df <-  df |> 
+  mutate(across(c(bpm,streams),normaliserx100,.names = "{.col}_normx100")) |> 
+  select(everything())
+
+df <- df |> 
+  mutate(across(c(bpm_normx100,ends_with("percent")),~case_when(.>=75~4,
+                                                .>=50~3,
+                                                .>=25~2,
+                                               TRUE~1),.names = "ind_{.col}")) |> 
+  mutate(across(starts_with("ind_"),as.factor)) |> 
+  select(everything())
+  
+
+
+
+colnames(df)[40] <- "speechiness"
+colnames(df)[39] <- "liveness"
+colnames(df)[38] <- "instrumentalness"
+colnames(df)[37] <- "acousticness"
+colnames(df)[36] <- "energy"
+colnames(df)[35] <- "valence"
+colnames(df)[34] <- "danceability"
+colnames(df)[33] <- "rythme_bpm"
+
+colnames(df)[27] <- "top_spotify"
+colnames(df)[28] <- "top_apple"
+colnames(df)[29] <- "top_deezer"
+colnames(df)[30] <- "top_shazam"
+
+
+
+rm(cor_df,df_stat_des,data_stream,vec_couleur,MFM,Description,Gestion_NA,mois)
+quanti <- which(sapply(df,FUN = is.numeric)==TRUE)
+quali <- which(sapply(df,FUN = is.character)==TRUE)
+quali <- append(quali,which(sapply(df,is.factor)==TRUE))
+
+
+
+quali_sup <- c(2,5,6,17:19,27:30)
+
+
+
+res_ACM <- MCA(df,quali.sup = quali_sup,quanti.sup = quanti,
+               graph = FALSE,ncp = Inf)
+
+
+
+```
+
+
+
+## Etude des inerties {-}
+
+```{r }
+
+ACPscreenplot(res_ACM,titre = "Pourcentage d'inertie expliqué par chaque axe")+
+  labs(y = "") + geom_hline(yintercept =1/nrow(res_ACM$eig)*100,colour = "red",linetype="dashed" )
+
+```
+
+
+
+## Etude des variables et de leurs modalités {-}
+
+### Représentation des variables et de leurs modalités {-}
+
+```{r fig.height=12,fig.width=12}
+
+
+coord_quanti_sup <- res_ACM$quanti.sup$coord
+
+fviz_mca_var(res_ACM,
+                      shadow = TRUE,
+                      choice = c("var.cat"),
+                      xlim = c(-2, 4),
+                      ylim = c(-2, 4),
+                      col.var = "cos2",
+                      unselect = 0,
+                      gradient.cols = c("grey", "darkblue"),
+                      repel = TRUE,
+                      select.var = list("cos2" = 0.15),
+                      var_sup = c("top_spotify")) +
+  mon_theme +
+  theme(rect = element_rect(fill = NA, colour = "white")) +
+  labs(title = "Nuage des modalités", subtitle = "sur le plan (1,2)")+
+  annotate("segment", x = 0, y = 0, xend = coord_quanti_sup[c(13,14,15,16,17,19), 1], yend = coord_quanti_sup[c(13,14,15,16,17,19), 2],
+           arrow = arrow(angle = 20, length = unit(0.10, "inches"), ends = "last", type = "open"),colour="darkred")+
+  geom_text(data = data.frame(x = coord_quanti_sup[c(14,16,19), 1], y = coord_quanti_sup[c(14,16,19), 2],
+                              label = rownames(res_ACM$quanti.sup$coord)[c(14,16,19)]),
+            aes(x = coord_quanti_sup[c(14,16,19), 1], y = coord_quanti_sup[c(14,16,19), 2], label = label),
+            hjust = 1, vjust = 0,colour="darkred",cex = 4)+
+  geom_text(data = data.frame(x = coord_quanti_sup[c(13,15), 1], y = coord_quanti_sup[c(13,15), 2],
+                              label = rownames(res_ACM$quanti.sup$coord)[c(13,15)]),
+            aes(x = coord_quanti_sup[c(13,15), 1], y = coord_quanti_sup[c(13,15), 2], label = label),
+            hjust = 1, vjust = 1,colour="darkred",cex = 4)+
+  geom_text(data = data.frame(x = coord_quanti_sup[c(17), 1], y = coord_quanti_sup[c(17), 2],
+                              label = rownames(res_ACM$quanti.sup$coord)[c(17)]),
+            aes(x = coord_quanti_sup[c(17), 1], y = coord_quanti_sup[c(17), 2], label = label),
+            hjust = 0.3, vjust = 2,colour="darkred",cex = 4)
+
+
+```
+
+
+
+
+```{r}
+ggpubr::ggarrange(
+plot.MCA(res_ACM,choix = "var",
+         xlim = c(0,0.7),
+         ylim = c(0,0.5),
+         invisible = "quanti.sup",
+         cex = 0.8,
+         col.var = "darkblue",
+         repel=TRUE,
+         title = "Nuage des variables"
+         )+
+labs(subtitle = "sur le plan (F1,F2)")+
+  mon_theme
+)
+
+```
+
+
+
+
+### Contribution des variables {-}
+```{r contribution}
+contrigraph(res_ACM,sous_titre = "sur l'axe 1",choice = "var")+
+    theme(rect = element_rect(fill = NA,color = "white"),panel.grid = element_line(colour = "lightgrey"))
+  
+
+  
+```
+
+```{r}
+contri_ord_ax1 <- res_ACM$var$contrib[,1] |> sort(decreasing = TRUE) |> cumsum()
+
+
+contri_ord_ax2 <- res_ACM$var$contrib[,2] |> sort(decreasing = TRUE) |> cumsum()
+
+```
+
+
+
+
+```{r}
+contrigraph(res_ACM,axes = 2,sous_titre = "sur l'axe 2","var")+
+    theme(rect = element_rect(fill = NA,color = "white"),panel.grid = element_line(colour = "lightgrey"))
+```
+
+
+
+## Etude des individus {-}
+
+### Représentation des individus {-}
+
+```{r nua_ind_spot,out.width="100%"}
+
+
+fviz_mca_ind(res_ACM,geom.ind = c("point"),repel = TRUE,col.ind = "contrib",gradient.cols=c("grey","darkblue"))+mon_theme+theme(rect = element_rect(fill = NA,colour = "white"))+labs(title = "Nuage des musiques",subtitle = "sur le plan (1,2)")
+
+
+
+
+```
+
+
+
+
+### Musiques aux extrêmités des axes {-}
+
+```{r}
+
+a <- res_ACM$ind$coord |> round(2) %>% as_tibble(rownames = "Musique") %>%
+  arrange(`Dim 1`) %>% slice(1,951) %>% 
+  select(Musique) %>% 
+  left_join(as_tibble(df[,c(27:29,33:40)], rownames = "Musique"), by = "Musique")  
+
+b <- res_ACM$ind$coord |> round(2) %>% as_tibble(rownames = "Musique") %>%
+  arrange(desc(`Dim 2`)) %>% slice(1,951) %>% 
+  select(Musique) %>% 
+  left_join(as_tibble(df[,c(27:29,33:40)], rownames = "Musique"), by = "Musique")
+
+# pageLength pour préciser le nombre de page qui s'affiche (pour éviter un tableau encombrant)
+rbind(a,b) |> tableau_contingence_latex()
+```
+
+
+
+
+### Contribution des individus {-}
+
+
+```{r out.width="100%"}
+par_contrib_1 <-res_ACM$ind$contrib[,1]/sum(res_ACM$ind$contrib[,1]) 
+par_contrib_1_cum <- par_contrib_1 %>% sort(decreasing = TRUE) %>% cumsum()
+par_contrib_2 <-res_ACM$ind$contrib[,2]/sum(res_ACM$ind$contrib[,2]) 
+par_contrib_2_cum <- par_contrib_2 %>% sort(decreasing = TRUE) %>% cumsum()
+
+contri50 <- function(x){
+  sum(x <= 0.50)
+}
+tab_contri<- cbind(par_contrib_1_cum, par_contrib_2_cum)  |> 
+  apply(MARGIN = 2, FUN = contri50)
+names(tab_contri) <- paste("dim", 1:2)
+tab_contri |>t() |>  tableau_contingence_latex() |> 
+  row_spec(1,background = "white",color = "black")
+
+
+```
+
+
+### Conclusion sur les axes {-}
+
+
+
+## Classification {-}
+
+
+```{r}
+list_graph <- list()
+k <- 0
+for (i in c(27:30,33:40,18:19)){
+  k <- k+1
+graph <- data.frame(nom = names(table(df[, i])), effectif = as.numeric(table(df[, i]))) |>
+    ggplot(aes(y = fct_reorder(nom, effectif), x = effectif)) +
+    geom_bar(stat = "identity",color = "grey",width = 0.4, fill = "aquamarine") +
+    labs(title = colnames(df)[i],
+         x = "",
+         y="") +
+    mon_theme
+list_graph[[k]] <- graph
+}
+ggpubr::ggarrange(plotlist = list_graph,
+                  ncol = 4,
+                  nrow = 4)
+
+
+```
+
+
+
+### Premières visualisations des clusters {-}
+```{r fig.width=8,fig.height=4}
+
+
+onu_hcpc_consol <- HCPC(res_ACM,graph=FALSE,method = "ward",metric = "manhattan", consol=TRUE, nb.clust = )
+
+#fviz_dend(onu_hcpc_consol, cex = 0.3, k_colors ="black", 
+#          main = "Clustering with Ward method",
+#          show_labels = FALSE)+mon_theme
+ 
+```
+```{r}
+k <- 20
+ggpubr::ggarrange(
+(onu_hcpc_consol$call$t$within[1:k]/onu_hcpc_consol$call$t$within[1]) %>% as.data.frame() %>% ggplot() + aes(x= 1:k,y=`.`) + geom_bar(stat = "identity", fill = "darkcyan", alpha= 0.8) +
+  labs(title = "Inertie intra-cluster", x = "")+mon_theme,
+
+onu_hcpc_consol$call$t$inert.gain[1:k] %>% as.data.frame() %>%
+  ggplot() + aes(x= 1:k,y=`.`) + geom_bar(stat = "identity", fill = "darkcyan", alpha = 0.8) +
+  labs(title = "Gain d'inertie inter-cluster", x="")+mon_theme,
+ncol = 2)
+```
+
+
+
+```{r }
+
+
+onu_hcpc_consol <- HCPC(res_ACM,graph=FALSE, consol=TRUE, nb.clust = 5,
+                        metric = "manhattan")
+
+vec_col <- rainbow(13)
+
+fviz_cluster(onu_hcpc_consol, geom="point", ellipse = TRUE,axes = c(1,2), show.clust.cent = FALSE, alpha = 0.8,
+               #colors = c(col_ind, "deeppink1", "seagreen2", orange, violet,  col_var),
+               palette = vec_col, 
+               ggtheme = theme_minimal()) +
+  #lims(x= c(-1.5,1.5)) + 
+  labs(title= "Visualisation des clusters",
+       subtitle = "sur le plan (F1,F2)") +
+  mon_theme+
+  theme(legend.position = "bottom",rect = element_rect(fill = NA,colour = "white"),panel.border = element_rect(fill = NA,colour = "white"))
+```
+
+
+### Résultats de la classifications {-}
+
+
+
+
+
+#### Variables {-}
+
+
+
+```{r}
+onu_hcpc_consol$desc.var$category$"1" |> 
+  kable(digits=c(1, 1, 1, 4, 2) ) |> 
+  kable_styling(font_size = "11px" ) |> 
+  row_spec(0,background = "cornflowerblue",color = "white") |> 
+  column_spec(1,background = "blanchedalmond",color = "black") 
+```
+
+
+
+
+
+```{r}
+onu_hcpc_consol$desc.var$category$"2" |> 
+  kable(digits=c(1, 1, 1, 4, 2) ) |> 
+  kable_styling(font_size = "11px" ) |> 
+  row_spec(0,background = "cornflowerblue",color = "white") |> 
+  column_spec(1,background = "blanchedalmond",color = "black")
+```
+
+
+
+```{r}
+onu_hcpc_consol$desc.var$category$"3" |> 
+  kable(digits=c(1, 1, 1, 4, 2) ) |> 
+  kable_styling(font_size = "11px" ) |> 
+  row_spec(0,background = "cornflowerblue",color = "white") |> 
+  column_spec(1,background = "blanchedalmond",color = "black") 
+```
+
+
+```{r}
+onu_hcpc_consol$desc.var$category$"4" |> 
+  kable(digits=c(1, 1, 1, 4, 2) ) |> 
+  kable_styling(font_size = "11px" ) |> 
+  row_spec(0,background = "cornflowerblue",color = "white") |> 
+  column_spec(1,background = "blanchedalmond",color = "black") 
+```
+
+
+
+```{r}
+onu_hcpc_consol$desc.var$category$"5" |> 
+  kable(digits=c(1, 1, 1, 4, 2) ) |> 
+  kable_styling(font_size = "11px" ) |> 
+  row_spec(0,background = "cornflowerblue",color = "white") |> 
+  column_spec(1,background = "blanchedalmond",color = "black")
+```
+
+
+
+
+#### Individus {-}
+
+
+
+```{r}
+para <- onu_hcpc_consol$desc.ind$para #parangons
+dist <- onu_hcpc_consol$desc.ind$dist
+```
+
+```{r}
+par1 <- names(para[[1]])
+par2 <- names(para[[2]])
+par3 <- names(para[[3]])
+par4 <- names(para[[4]])
+par5 <- names(para[[5]])
+
+dist1 <- names(dist[[1]])
+dist2 <- names(dist[[2]])
+dist3 <- names(dist[[3]])
+dist4 <- names(dist[[4]])
+dist5 <- names(dist[[5]])
+
+
+
+
+tab_par <- df[c(par1, par2, par3, par4, par5),c(27:29,33:40)]
+rownames(tab_par) <- c("1_1","1_2","1_3","1_4","1_5",
+                      "2_1","2_2","2_3","2_4","2_5",
+                      "3_1","3_2","3_3","3_4","3_5",
+                      "4_1","4_2","4_3","4_4","4_5",
+                      "5_1","5_2","5_3","5_4","5_5")
+
+```
+
+<center>**Que disent les parangons ?**</center>
+
+```{r fig.height=1,fig.width=3}
+tab_par %>% kable() %>%
+  kable_styling( 
+    full_width = FALSE,
+    position = "center", font_size = "11px",
+    latex_options = c("striped", "hover")
+  )  %>% pack_rows(
+    "Cluster 1", 1, length(par1)
+  ) %>% pack_rows(
+    "Cluster 2", length(par1) +1 , length(par1) + length(par2)
+  ) %>% pack_rows(
+    "Cluster 3", length(par1)+ length(par2)  +1 , length(par1) + length(par2) + length(par3)
+  ) %>% pack_rows(
+    "Cluster 4", length(par1) + length(par2) + length(par3) + 1, length(par1) + length(par2) + length(par3)+  length(par4)
+  ) %>% pack_rows(
+    "Cluster 5", length(par1) + length(par2) + length(par3) + length(par4) +1 , length(par1) + length(par2) + length(par3) +length(par4) + length(par5)
+  ) |> 
+  row_spec(0,background = "cornflowerblue",color = "white") |> 
+  column_spec(1,background = "blanchedalmond",color = "black")  
+  
+  
+```
+
+

@@ -1,0 +1,134 @@
+---
+toc: false
+backgroundcolor: "#fff8e7"
+format: 
+  html:
+    css: "sections_css/style_competences.css"
+---
+
+
+
+<div class="skills-container">
+<div class="skills-section">
+  <h2>📚 Connaissances théoriques </h2>
+  <ul>
+    <li>
+      <details>
+          <summary><strong>{{< fa solid scale-balanced >}} Économie</strong> : Spécialisation en économie industrielle</summary>
+          <ul>
+            <li><strong>Microéconomie : </strong>théorie du consommateur, théorie du producteur, équilibre partiel et général.</li>
+            <li><strong>Économie industrielle : </strong>monopole, oligopole, théorie des jeux.</li>
+            <li><strong>Macroéconomie : </strong>croissance économique, inflation, chômage, politiques monétaires et fiscales.</li>
+          </ul>
+      </details>
+    </li>
+    <li>
+      <details>
+        <summary><strong>{{< fa calculator >}} Mathématiques :</strong></summary>
+        <ul>
+          <li>Algèbre linéaire, suites, équation différentielles, optimisation, dynamique.</li>
+        </li>
+        </ul>
+      </details>
+    </li>
+    <li>
+      <details>
+        <summary><strong>{{< fa chart-bar >}} Statistiques :</strong>  Analyse et interprétation des données.</summary>
+        <ul>
+          <li>Théorie fréquentiste et bayésienne, tests d'hypothèses
+          </li>
+          <li>Théorie des sondages</li>
+        </li>
+        </ul>
+      </details>
+    </li>
+    <li>
+      <details>
+        <summary><strong>{{< fa chart-line >}} Économétrie : </strong>
+        </summary>
+        <ul>
+          <li>Analyse des séries temporelles, modèles de panel, modèles à variable dépendante qualitative, ainsi que des modèles censurés et tronqués.</li>
+        </ul>
+      </details>
+    </li>
+  </ul>
+</div>
+
+<div class="skills-section">
+  <h2> {{< fa code >}} Langages </h2>
+  </h2>
+  <ul>
+    <li>
+      <details>
+        <summary><strong>{{< fa brands python >}} python : </strong> Langage de programmation généraliste.</summary>
+        <ul>
+          <li>Déploiement d'applications data par le biais de `streamlit`.
+          </li>
+          <li>Manipulation de données avec `pandas` et `numpy`.</li>
+          <li>Visualisation de données avec `matplotlib` mais surtout avec `plotly`.</li>
+          <li>Développement de code de haute qualité en utilisant `mypy` pour le typage statique, `black` pour le linting et le formatage, et `pytest` pour les tests unitaires.</li>
+        </li>
+        </ul>
+      </details>
+    </li>
+    <li>
+      <details>
+        <summary><strong>{{< fa brands r-project >}} : </strong> Langage de programmation statistique.</summary>
+        <ul>
+          <li>*Data Manipulation* avec `dplyr` et `tidyr`.</li>
+          </li>
+          <li>Création de tableaux par le biais de `kableExtra` ou de `gt` pour les tableaux interactifs.
+          </li>
+          <li>Visualisation de données avec `ggplot2`</li>
+          <li>Analyse factorielle avec `FactoMineR` et `factoextra`.
+          </li>
+          <li>Machine learning avec `caret` et `tidymodels`.</li>
+          <li>Modélisation économétrique</li>
+          <li> Utilisation de `styler` pour le formatage du code.
+          </li>
+        </ul>
+      </details>
+    </li>
+    <li><strong>{{< fa solid database >}} SQL : </strong>Langage de requêtes pour les bases de données.</li>
+  </ul>
+</div>
+
+<div class="skills-section">
+  <h2>{{< fa lightbulb >}} Compétences générales </h2>
+  <ul>
+    <li>
+      <details>
+        <summary><strong>{{< fa solid chalkboard-teacher >}}</strong> Capacité de présentation et de vulgarisation</summary>
+        <ul>
+          <li>Pendant mes études, j'ai eu l'occasion de présenter les aspects techniques de mes projets et j'ai eu l'opportunité de présenter ces informations à différents publics.
+          </li>
+        </ul>
+      </details>
+    </li>
+    <li>
+      <details>
+        <summary><strong>{{< fa users >}}</strong> Travail en collaboration</summary>
+        <ul>
+          <li>Au cours de mes études de master, j'ai été amené à collaboré avec plusieurs personnes sur divers projets académiques.
+          </li>
+        </ul>
+      </details>
+    </li>
+    <li><strong><img src="../imgs/en_flag.jpg" alt="UK Flag" style="width: 20px; height: auto;"></strong> : Anglais</li>
+  </ul>
+</div>
+
+<div class="skills-section">
+  <h2>🛠️ Outils et Technologies</h2>
+  <ul>
+    <li><strong>{{< fa brands git >}} : </strong>Gestion de versions.</li>
+    <li><strong>{{< fa brands markdown >}} Markdown : </strong>Langage de balisage léger.</li>
+    <li><strong>{{< fa file-code >}} Quarto : </strong>Génération de documents interactifs.</li>
+    <li><strong>{{< fa file-excel >}} Excel</strong></li>
+  </ul>
+</div>
+</div>
+
+
+
+  

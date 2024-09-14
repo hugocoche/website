@@ -1,0 +1,2396 @@
+---
+title: "{{< fa code >}} Code source"
+title-block-banner: true
+description: "Vous pouvez retrouver le code source de cette étude en format html."
+image: "../../../../imgs/code_img.png"
+date: "2024-07-31"
+author: "Hugo Cochereau"
+categories: "R"
+---
+
+
+# Initialisation des objets
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(
+    echo = TRUE,
+    message = FALSE,
+    warning = FALSE,
+    eval = FALSE,
+    #cache = TRUE,
+    size = "tiny"
+)
+```
+
+```{r library}
+library(tidyverse)
+library(TraMineR)
+library(cluster)
+library(ggdendro)
+library(seqhandbook)
+library(RColorBrewer)
+library(JLutils)
+library(ggplot2)
+library(lubridate)
+library(ggseqplot)
+library(kableExtra)
+library(readxl)
+library(gtsummary)
+library(stargazer)
+library(nnet)
+library(gridExtra)
+library(ggpubr)
+library(cowplot)
+library(gridExtra)
+library(MASSExtra)
+library(haven)
+```
+
+```{r theme, echo=FALSE}
+mon_theme <- theme(
+    plot.title = element_text(
+        color = "black",
+        hjust = 0.5,
+        face = "bold.italic"
+    ),
+    plot.subtitle = element_text(
+        color = "darkred",
+        hjust = 0.5,
+        face = "bold.italic"
+    ),
+    panel.background = element_rect(fill = "white", color = "white"),
+    plot.background = element_rect(fill = "white", color = "white"),
+    legend.position = "bottom",
+    legend.background = element_rect(fill = "white", colour = "white"),
+    axis.title.x = element_text(
+        color = "darkred",
+        face = "bold.italic", hjust = 0.5
+    ),
+    axis.title.y = element_text(
+        color = "darkred",
+        face = "bold.italic", hjust = 0.5
+    ),
+    axis.text.x = element_text(
+        color = "black",
+        angle = 90,
+        hjust = 1,
+        size = 6
+    ),
+    axis.text.y = element_text(
+        color = "black",
+        face = "bold",
+        size = 8
+    ),
+    axis.line.x = element_blank(),
+    axis.line.y = element_blank()
+)
+```
+
+```{r fonction, echo=FALSE}
+appli_kable <- function(
+    tab, 
+    titre = NULL,
+    col.names = NA,
+    row.names = NA,
+    font.size = 5,
+    full_width = FALSE,
+    format = "latex",
+    table.attr = NULL
+  ){
+  tab |> 
+  kable(
+    caption = titre,
+    format = format,
+    align = "c",
+    #longtable = TRUE,
+    booktable = FALSE,
+    booktabs = T,
+    escape = TRUE,
+    col.names = col.names,
+    row.names = row.names
+  ) |> 
+  kable_styling(
+    latex_options = c("HOLD_position", "scale_down", "repeat_header"),
+    full_width = full_width,
+    font_size = font.size,
+    position = "left"
+  ) |> 
+    row_spec(0, bold = T) |> 
+    column_spec(1, bold = T)
+}
+```
+
+```{r loadings, echo=FALSE}
+load(file = "savings/df")
+load("savings/df.seq")
+load("savings/partition")
+```
+
+```{r taux_chomage}
+reg <- read_excel(path = "data_frame/sl_etc_2024T1.xls", sheet = 3, skip = 3)
+reg_for_reg_classe <- reg |> select(2, 119:134)
+mean_unmemployment <- rowMeans(reg_for_reg_classe[-1])
+
+reg_for_reg_contrat <- reg |> select(2, 136)
+mean_unmemployment2 <- rowMeans(reg_for_reg_contrat[-1])
+
+rm(reg, reg_for_reg_contrat, reg_for_reg_classe)
+```
+
+## Visualisation des séquences
+
+```{r global_seq_plot, fig.cap='Source : Enquête "Génération 2010 à 5 ans" du Céreq', fig.show='hold'}
+
+month_labels <- expand.grid(month.abb, 2009:2015) 
+month_labels <- paste(month_labels$Var1, month_labels$Var2, sep = " ")
+month_labels <- month_labels[25:72]
+
+
+ynames <- c("0%", "25%", "50%", "75%", "100%")
+xnames <- month_labels
+
+global_seq_plot <- ggseqdplot(df.seq,  with.missing = FALSE, border = FALSE ) + 
+  labs(
+    title = "Part des jeunes dans chaque situation \n sur la période allant de janvier 2011 à décembre 2014",
+    y = " "
+  ) + mon_theme +
+  scale_x_discrete(labels = xnames) +
+  scale_y_continuous(labels = ynames) 
+```
+
+## Manipulation des séquences
+```{r manipulation_sequences}
+df <- df[between(df$age10, 15, 24), ]
+df <- df[df$super==1, ]
+
+month_reorder <- c(194,205,216,227,238,249,260:262,195:204,206:215,217:226,228:237,239:248,250:259) + 1
+
+
+old_categories <- list(
+  Emploi = c("01", "02", "03", "04"),
+  Etude = c("17", "18", "22"),
+  Formation = c("09", "10", "15", "16"),
+  NEET = c("05", "06", "11", "12", "07", "08", "13", "14"),
+  vacances = c("20", "21")
+)
+
+other_old_categories <- list(
+  Emploi = c("01", "02", "03", "04"),
+  Etude = c("17", "18", "22"),
+  Formation = c("09", "10", "15", "16"),
+  chômeurs = c("05", "06", "11", "12"),
+  inactifs = c("07", "08", "13", "14"),
+  vacances = c("20", "21")
+)
+
+
+
+other_details <- df %>%
+  mutate(across(all_of(month_reorder), ~ case_when(
+    substr(., start = 1, stop = 2) %in% other_old_categories$Emploi ~ paste0("1", substr(., start = 3, stop = 4)),
+    substr(., start = 1, stop = 2) %in% other_old_categories$Etude ~ paste0("5", substr(., start = 3, stop = 4)),
+    substr(., start = 1, stop = 2) %in% other_old_categories$Formation ~ paste0("4", substr(., start = 3, stop = 4)),
+    substr(., start = 1, stop = 2) %in% other_old_categories$chômeurs ~ paste0("2", substr(., start = 3, stop = 4)),
+    substr(., start = 1, stop = 2) %in% other_old_categories$inactifs ~ paste0("3", substr(., start = 3, stop = 4)),
+    TRUE ~ NA_character_
+  ))) 
+
+
+df[, month_reorder] <- lapply(
+  X = df |> select(month_reorder),
+  FUN = function(var) sapply(var, substr, start = 1, stop = 2)
+)
+
+month_details <- df %>%
+  mutate(across(all_of(month_reorder), ~ case_when(
+    . %in% other_old_categories$Emploi ~ 1,
+    . %in% other_old_categories$Etude ~ 5,
+    . %in% other_old_categories$Formation ~ 4,
+    . %in% other_old_categories$chômeurs ~ 2,
+    . %in% other_old_categories$inactifs ~ 3,
+    TRUE ~ NA_integer_
+  )))
+
+
+df <- df %>%
+  mutate(across(all_of(month_reorder), ~ case_when(
+    . %in% old_categories$Emploi ~ 1,
+    . %in% old_categories$Etude ~ 4,
+    . %in% old_categories$Formation ~ 3,
+    . %in% old_categories$NEET ~ 2,
+    TRUE ~ NA_integer_
+  )))
+
+
+month_reorder <- month_reorder[15:62]
+
+count_sequences_by_type <- function(row, type_code) {
+  row <- as.character(row)
+  type_rows <- row[substr(row, start = 1, stop = 1) == type_code]
+  type_rows <- type_rows[!is.na(type_rows)]
+  sequence_numbers <- substr(type_rows, start = 2, stop = 3)
+  sequence_numbers <- as.numeric(sequence_numbers)
+  sequence_numbers <- sequence_numbers[!is.na(sequence_numbers)]
+  num_sequences <- length(unique(sequence_numbers))
+  
+  return(num_sequences)
+}
+
+other_details <- other_details %>%
+  rowwise() %>%
+  mutate(
+    nsemp_update = count_sequences_by_type(c_across(all_of(month_reorder)), "1"),
+    nscho_update = count_sequences_by_type(c_across(all_of(month_reorder)), "2"),
+    nsina_update = count_sequences_by_type(c_across(all_of(month_reorder)), "3"),
+    nsfor_update = count_sequences_by_type(c_across(all_of(month_reorder)), "4"),
+    nsetu_update = count_sequences_by_type(c_across(all_of(month_reorder)), "5")
+  ) %>%
+  ungroup()
+
+df <- df |> mutate(
+  nsemp_update = other_details$nsemp_update,
+  nscho_update = other_details$nscho_update,
+  nsina_update = other_details$nsina_update,
+  nsfor_update = other_details$nsfor_update,
+  nsetu_update = other_details$nsetu_update
+)
+
+seq <- df[, month_reorder]
+
+
+df <- df |> mutate(new_contrat_13 = case_when(
+  contrat_13 == "01 Non salarié" ~ "Non salarié",
+  contrat_13 == "02 CDI, Fonctionnaire" ~ "CDI, Fonctionnaire",
+  contrat_13 == "03 Contrat aidé" ~ "Contrat aidé",
+  contrat_13 == "04 Emploi à durée déterminée" ~ "Emploi à durée déterminée",
+  contrat_13 == "05 Intérim" ~ "Intérim",
+  TRUE ~ "Aucun emploi"
+))
+
+df <- df |> mutate(new_contrat_15 = case_when(
+  contrat_15 == "01 Non salarié" ~ "Non salarié",
+  contrat_15 == "02 CDI, Fonctionnaire" ~ "CDI, Fonctionnaire",
+  contrat_15 == "03 Contrat aidé" ~ "Contrat aidé",
+  contrat_15 == "04 Emploi à durée déterminée" ~ "Emploi à durée déterminée",
+  contrat_15 == "05 Intérim" ~ "Intérim",
+  TRUE ~ "Aucun emploi"
+))
+
+
+month_details <- month_details |> mutate(dernier_mois = case_when(
+  if_15 == "66" ~ "mois66",
+  if_15 == "67" ~ "mois67",
+  if_15 == "68" ~ "mois68",
+  if_15 == "69" ~ "mois69"
+))
+
+month_details$new_contrat_13 <- df$new_contrat_13
+month_details$new_contrat_15 <- df$new_contrat_15
+
+month_details$dernier_mois <- mapply(function(row, col) {
+  month_details[row, col]
+}, row = 1:nrow(month_details), col = month_details$dernier_mois)
+
+
+df <- df |> mutate(dernier_mois = case_when(
+  if_15 == "66" ~ "mois66",
+  if_15 == "67" ~ "mois67",
+  if_15 == "68" ~ "mois68",
+  if_15 == "69" ~ "mois69"
+))
+
+df$dernier_mois <- mapply(function(row, col) {
+  df[row, col]
+}, row = 1:nrow(df), col = df$dernier_mois)
+
+month_details <- month_details |> 
+  mutate(phd_reduced = case_when(
+    phd %in% c("01","03I", "03T", "04I", "04T", "05") ~ "Bac / Non-diplômé", # BACCALAUREAT
+    phd %in% c("06I", "07I", "06T", "07T") ~ "Bac+2 / BTS-DUT", # BTS-DUT, AUTRE BAC+2
+    phd %in% c("09L", "09M", "10L", "11L", "12L", "10M", "11M", "12M", "08") ~ "Bac+3/4 / Santé social",
+    phd %in% c("13L", "14L", "13M", "14M", "15", "16", "17", "18L", "18M") ~ "Bac+5 / Doctorat",# M2, GRANDE ÉCOLES, AUTRES BAC+5
+    TRUE ~ NA
+  ))
+
+
+month_details$phd_reduced <- factor(month_details$phd_reduced, c("Bac / Non-diplômé", "Bac+2 / BTS-DUT", "Bac+3/4 / Santé social", "Bac+5 / Doctorat"))
+
+
+month_details <- month_details |> mutate(situation_15 = case_when(
+  dernier_mois == "1" & new_contrat_15 == "CDI, Fonctionnaire" ~ "CDI, Fonctionnaire",
+  dernier_mois == "1" & new_contrat_15 == "Contrat aidé" ~ "Contrat aidé",
+  dernier_mois == "1" & new_contrat_15 == "Emploi à durée déterminée" ~ "Emploi à durée déterminée",
+  dernier_mois == "1" & new_contrat_15 == "Intérim" ~ "Intérim",
+  dernier_mois == "1" & new_contrat_15 == "Non salarié" ~ "Non salarié",
+  dernier_mois == "2" ~ "Chômeurs",
+  dernier_mois == "3" ~ "Inactifs",
+  dernier_mois == "4" ~ "Formation",
+  dernier_mois == "5" ~ "Etude",
+  TRUE ~ NA
+))
+
+month_details$situation_15 <- factor(month_details$situation_15, levels = c("CDI, Fonctionnaire", "Contrat aidé", "Emploi à durée déterminée", "Intérim", "Non salarié", "Chômeurs", "Inactifs", "Formation", "Etude"))
+
+
+
+count_occurrences <- function(df, columns, value) {
+  rowSums(df[columns] == value, na.rm = TRUE)
+}
+
+calendar_columns <- paste0("mois", 15:62)
+
+df <- df %>%
+  mutate(
+    nmemp_update = count_occurrences(month_details, calendar_columns, 1),
+    nmcho_update = count_occurrences(month_details, calendar_columns, 2),
+    nmina_update = count_occurrences(month_details, calendar_columns, 3),
+    nmfor_update = count_occurrences(month_details, calendar_columns, 4),
+    nmetu_update = count_occurrences(month_details, calendar_columns, 5)
+  ) 
+
+
+rm(
+  other_details,
+  old_categories, 
+  other_old_categories,
+  calendar_columns,
+  count_occurrences,
+  count_sequences_by_type
+  )
+```
+
+```{r seq_group_graph}
+
+labs <- data.frame(
+  labels = c("Emploi", "NEET", "Formation", "Étude"),
+  code = c("EMP", "NEET", "FORM", "ÉTU"),
+  categories = 1:4
+)
+
+part.labs <- factor(df.part, labels = c("Non-NEET", "Repreneurs d'études", "NEET fluctuants", "NEET de long terme"))
+part.labs <- factor(part.labs, levels = c("NEET de long terme", "Non-NEET", "NEET fluctuants", "Repreneurs d'études"))
+
+df.seq.group <- cbind(seq, part.labs)
+
+df.seq.1 <- df.seq.group |> filter(part.labs == "Non-NEET") |> select(1:48) |> seqdef(
+  alphabet = labs$categories,
+  states = labs$code,
+  labels = labs$labels,
+  cpal = c("#003366", "#FF6600", "#009966", "#CCCCCC")
+)
+
+
+df.seq.2 <- df.seq.group |> filter(part.labs == "Repreneurs d'études") |> select(1:48) |> seqdef(
+  alphabet = labs$categories,
+  states = labs$code,
+  labels = labs$labels,
+  cpal = c("#003366", "#FF6600", "#009966", "#CCCCCC")
+)
+
+df.seq.3 <- df.seq.group |> filter(part.labs == "NEET fluctuants") |> select(1:48) |> seqdef(
+  alphabet = labs$categories,
+  states = labs$code,
+  labels = labs$labels,
+  cpal = c("#003366", "#FF6600", "#009966", "#CCCCCC")
+)
+
+df.seq.4 <- df.seq.group |> filter(part.labs == "NEET de long terme") |> select(1:48) |> seqdef(
+  alphabet = labs$categories,
+  states = labs$code,
+  labels = labs$labels,
+  cpal = c("#003366", "#FF6600", "#009966", "#CCCCCC")
+)
+
+
+graph1 <- ggseqdplot(df.seq.1, with.missing = FALSE, with.entropy = FALSE) + 
+  labs(
+    title = paste("Groupe 1 (n = ", nrow(df.seq.1),")", sep = ""),
+    y = " "
+  ) + mon_theme +
+  scale_x_discrete(labels = xnames) +
+  scale_y_continuous(labels = ynames)
+
+graph2 <- ggseqdplot(df.seq.2, with.missing = FALSE, with.entropy = FALSE) + 
+  labs(
+    title = paste("Groupe 2 (n = ", nrow(df.seq.2),")", sep = ""),
+    y = " "
+  ) + mon_theme +
+  scale_x_discrete(labels = xnames) +
+  scale_y_continuous(labels = ynames)
+
+graph3 <- ggseqdplot(df.seq.3, with.missing = FALSE, with.entropy = FALSE) +
+  labs(
+    title = paste("Groupe 3 (n = ", nrow(df.seq.3),")", sep = ""),
+    y = " "
+  ) + mon_theme +
+  scale_x_discrete(labels = xnames) +
+  scale_y_continuous(labels = ynames)
+
+graph4 <- ggseqdplot(df.seq.4, with.missing = FALSE, with.entropy = FALSE) + 
+  labs(
+    title = paste("Groupe 4 (n = ", nrow(df.seq.4),")", sep = ""),
+    y = " "
+  ) + mon_theme +
+  scale_x_discrete(labels = xnames) +
+  scale_y_continuous(labels = ynames)
+
+
+
+group_seq_plot <- ggpubr::ggarrange(
+  graph1, graph2, graph3, graph4, 
+  ncol = 2,
+  nrow = 2,
+  common.legend = T,
+  legend = "bottom"
+) 
+
+rm(
+  df.seq, df.seq.1, df.seq.2, df.seq.2, df.seq.3, df.seq.4, df.seq.group,
+  labs, seq, month_labels,
+  xnames,
+  ynames,
+  graph1, graph2, graph3, graph4
+)
+```
+
+## Manipulation des variables
+```{r modif_var}
+df <- df |> mutate(pere_emplois = case_when(
+  sitpere %in% c("1") ~ "Père en emploi",
+  sitpere %in% c("2", "3", "4", "5", "6", "7") ~ "Père n'est pas en emploi",
+  TRUE ~ NA
+))
+
+df <- df |> mutate(classe_sal_conj = case_when(
+  salconj < 1000 ~ "< 1000",
+  salconj < 2000 ~ "[1000 ; 2000[",
+  salconj < 3000 ~ "[2000 ; 3000[",
+  salconj >= 3000 ~ " > 3000",
+  TRUE ~ NA
+))
+
+df <- df |> mutate(cspp = case_when(
+  ca9c %in% c(1, 2) ~ "Ouvrier ou Employé",
+  ca9c == 3 ~ "Techniciens et professions intermédiaires",
+  ca9c == 4 ~ "Cadres et professions libérales",
+  ca9c %in% c(5,6) ~ "Indépendant",
+  ca9c == 7 ~ "Status inconnu",
+  TRUE ~ NA
+))
+
+
+df$cspp <- factor(df$cspp, levels = c(
+  "Ouvrier ou Employé",
+  "Techniciens et professions intermédiaires",
+  "Cadres et professions libérales",
+  "Indépendant",
+  "Status inconnu"
+))
+
+
+df <- df |> mutate(mere_emplois = case_when(
+  sitmere %in% c("1") ~ "Mère en emploi",
+  sitmere %in% c("2", "3", "4", "5", "6", "7") ~ "Mère n'est pas en emploi",
+  TRUE ~ NA
+))
+
+df <- df |> mutate(cspm = case_when(
+  ca10c %in% c(1, 2) ~ "Ouvrière ou Employère",
+  ca10c == 3 ~ "Techniciennes et professions intermédiaires",
+  ca10c == 4 ~ "Cadres et professions libérales",
+  ca10c %in% c(5,6) ~ "Indépendante",
+  ca10c == 7 ~ "Status inconnu",
+  TRUE ~ NA
+))
+
+df$cspm <- factor(df$cspm, levels = c(
+  "Ouvrière ou Employère",
+  "Techniciennes et professions intermédiaires",
+  "Cadres et professions libérales",
+  "Indépendante",
+  "Status inconnu"
+))
+
+
+df <- df |> mutate(etup = case_when(
+  ca11 == 1 ~ "Sans diplôme",
+  ca11 %in% c(2,3) ~ "Niveau baccalauréat",
+  ca11 %in% c(4,5,6) ~ "Diplômé du supérieur",
+  ca12 %in% 7 ~ "Diplôme inconnu",
+  TRUE ~ NA
+))
+
+
+df$etup <- factor(df$etup, levels = c(
+  "Sans diplôme",
+  "Niveau baccalauréat",
+  "Diplômé du supérieur",
+  "Diplôme inconnu"
+))
+
+
+df <- df |> mutate(etum = case_when(
+  ca12 == 1 ~ "Sans diplôme",
+  ca12 %in% c(2,3) ~ "Niveau baccalauréat",
+  ca12 %in% c(4,5,6) ~ "Diplômée du supérieur",
+  ca12 %in% 7 ~ "Diplôme inconnu",
+  TRUE ~ NA
+))
+
+df$etum <- factor(df$etum, levels = c(
+  "Sans diplôme",
+  "Niveau baccalauréat",
+  "Diplômée du supérieur",
+  "Diplôme inconnu"
+))
+
+
+df <- df |> mutate(etupar = case_when(
+  etup == "Diplômé du supérieur" & etum == "Diplômée du supérieur" ~ "2",
+  etup == "Diplômé du supérieur" | etum == "Diplômée du supérieur" ~ "1",
+  etup != "Diplômé du supérieur" & etum != "Diplômée du supérieur" ~ "0",
+  TRUE ~ NA
+))
+
+
+df <- df |> mutate(nbfratrie = case_when(
+  ca14 %in% 1:2 ~ "Un ou deux",
+  ca14 %in% c(3:10) ~ "Trois ou plus",
+  TRUE ~ "Aucun"
+))
+
+df$nbfratrie <- factor(df$nbfratrie, levels = c(
+  "Aucun", "Un ou deux", "Trois ou plus"
+))
+
+df <- df |> mutate(
+  enfant = case_when(
+    ca21_13 %in% 1:5 ~ "Oui",
+    TRUE ~ "Non"
+  )
+)
+
+df$enfant <- factor(df$enfant, levels = c(
+  "Non", "Oui"
+))
+
+df <- df |> mutate(zus = case_when(
+  zus == 1 ~ "Oui",
+  zus == 2 ~ "Non",
+  TRUE ~ NA
+))
+
+df <- df %>%
+  mutate(region_name = case_when(
+    regetab == 42 ~ "Alsace",
+    regetab == 72 ~ "Aquitaine",
+    regetab == 83 ~ "Auvergne",
+    regetab == 25 ~ "Basse-Normandie",
+    regetab == 26 ~ "Bourgogne",
+    regetab == 53 ~ "Bretagne",
+    regetab == 24 ~ "Centre",
+    regetab == 21 ~ "Champagne-Ardenne",
+    regetab == 94 ~ "Corse",
+    regetab == 43 ~ "Franche-Comté",
+    regetab == 23 ~ "Haute-Normandie",
+    regetab == 11 ~ "Île-de-France",
+    regetab == 91 ~ "Languedoc-Roussillon",
+    regetab == 74 ~ "Limousin",
+    regetab == 41 ~ "Lorraine",
+    regetab == 73 ~ "Midi-Pyrénées",
+    regetab == 31 ~ "Nord-Pas-de-Calais",
+    regetab == 52 ~ "Pays de la Loire",
+    regetab == 22 ~ "Picardie",
+    regetab == 54 ~ "Poitou-Charentes",
+    regetab == 93 ~ "Provence-Alpes-Côte d’Azur",
+    regetab == 82 ~ "Rhône-Alpes",
+    regetab == 97 ~ "DOM"
+  ))
+
+df <- df |> mutate(cat_zon13 = case_when(
+  ca0acataeu_13 == "111" ~ "Grands pôles urbains (plus de 10 000 emplois)",
+  ca0acataeu_13 == "112" ~ "Couronnes des grands pôles urbains",
+  ca0acataeu_13 == "120" ~ "Communes multipolarisées des grandes aires urbaines",
+  ca0acataeu_13 == "211" ~ "Moyens pôles (5 000 à 10 000 emplois",
+  ca0acataeu_13 == "212" ~ "Couronnes des moyens pôles",
+  ca0acataeu_13 == "221" ~ "Petits pôles (moins de 5 000 emplois)",
+  ca0acataeu_13 == "222" ~ "Couronnes des petits pôles",
+  ca0acataeu_13 == "300" ~ "Autres communes multipolarisées",
+  ca0acataeu_13 == "400" ~ "Communes isolées hors influence des pôles",
+  ca0acataeu_13 == "**" ~ "Etranger + Collectivités d'Outre-Mer (COM)",
+  TRUE ~ NA
+  
+)
+)
+
+df <- df |> mutate(chom_habitat = case_when(
+  ca0areg_13 %in% c(31, 22) ~ mean_unmemployment[7],
+  ca0areg_13 %in% c(25, 23) ~ mean_unmemployment[6],
+  ca0areg_13 == 11 ~ mean_unmemployment[3],
+  ca0areg_13 %in% c(42, 21, 41) ~ mean_unmemployment[8],
+  ca0areg_13 %in% c(26, 43) ~ mean_unmemployment[5],
+  ca0areg_13 == 24 ~ mean_unmemployment[4],
+  ca0areg_13 == 52 ~ mean_unmemployment[9],
+  ca0areg_13 == 53 ~ mean_unmemployment[10],
+  ca0areg_13 == 94 ~ mean_unmemployment[15],
+  ca0areg_13 %in% c(72, 54) ~ mean_unmemployment[11],
+  ca0areg_13 %in% c(91, 73) ~ mean_unmemployment[12],
+  ca0areg_13 %in% c(83, 82) ~ mean_unmemployment[13],
+  ca0areg_13 == 93 ~ mean_unmemployment[14],
+  ca0areg_13 == 97 ~ NA,
+  ca0areg_13 == 99 ~ NA,
+  TRUE ~ NA
+))
+
+
+df <- df |> mutate(chom_contrat = case_when(
+  ca0areg_15 %in% c(31, 22) ~ mean_unmemployment2[7],
+  ca0areg_15 %in% c(25, 23) ~ mean_unmemployment2[6],
+  ca0areg_15 == 11 ~ mean_unmemployment2[3],
+  ca0areg_15 %in% c(42, 21, 41) ~ mean_unmemployment2[8],
+  ca0areg_15 %in% c(26, 43) ~ mean_unmemployment2[5],
+  ca0areg_15 == 24 ~ mean_unmemployment2[4],
+  ca0areg_15 == 52 ~ mean_unmemployment2[9],
+  ca0areg_15 == 53 ~ mean_unmemployment2[10],
+  ca0areg_15 == 94 ~ mean_unmemployment2[15],
+  ca0areg_15 %in% c(72, 54) ~ mean_unmemployment2[11],
+  ca0areg_15 %in% c(91, 73) ~ mean_unmemployment2[12],
+  ca0areg_15 %in% c(83, 82) ~ mean_unmemployment2[13],
+  ca0areg_15 == 93 ~ mean_unmemployment2[14],
+  ca0areg_15 == 97 ~ NA,
+  ca0areg_15 == 99 ~ NA,
+  TRUE ~ NA
+))
+
+
+df <- df |> mutate(habde_13 = case_when(
+  habde_13 == "01" ~ "Vit chez ses parents",
+  habde_13 == "02" ~ "Vit en couple",
+  habde_13 == "03" ~ "Vit seul"
+))
+
+
+df <- df |> mutate(per1 = case_when(
+  per1 == "1" ~ "Oui",
+  per1 == "2" ~ "Non",
+  TRUE ~ NA
+))
+
+
+df <- df |> mutate(nbfratrie = case_when(
+  ca14 %in% c("1","2") ~ "Un ou deux",
+  ca14 %in% c("3", "4", "5", "6", "7", "8", "9", "10") ~ "Trois ou plus",
+  ca13 == "Non" | ca14 == "" ~ "Aucun"
+))
+
+
+df <- df |> mutate(pbsante = case_when(
+  ca23a == "2" ~ "Pas de problème de santé",
+  ca23a == "3" ~ NA,
+  ca23e == "1" ~ "Problème de santé",
+  ca23e == "2" ~ "Problème de santé",
+  ca23e == "3" ~ NA
+))
+
+df$pbsante <- factor(df$pbsante,
+                     levels = c(
+                       "Pas de problème de santé",
+                       "Problème de santé"
+                     ))
+
+
+df <- df |> 
+  mutate(phd_reduced = case_when(
+    phd %in% c("01","03I", "03T", "04I", "04T", "05") ~ "Bac / Non-diplômé", # BACCALAUREAT
+    phd %in% c("06I", "07I", "06T", "07T") ~ "Bac+2 / BTS-DUT", # BTS-DUT, AUTRE BAC+2
+    phd %in% c("09L", "09M", "10L", "11L", "12L", "10M", "11M", "12M", "08") ~ "Bac+3/4 / Santé social",
+    phd %in% c("13L", "14L", "13M", "14M", "15", "16", "17", "18L", "18M") ~ "Bac+5 / Doctorat",# M2, GRANDE ÉCOLES, AUTRES BAC+5
+    TRUE ~ NA
+  ))
+
+
+df$phd_reduced <- factor(df$phd_reduced, levels = c("Bac / Non-diplômé", "Bac+2 / BTS-DUT", "Bac+3/4 / Santé social", "Bac+5 / Doctorat"))
+
+
+
+
+df <- df |> mutate(sexe = case_when(
+  q1 == 1 ~ "Homme",
+  q1 == 2 ~ "Femme"
+))
+
+df$sexe <- factor(df$sexe, levels = c("Homme", "Femme"))
+
+df <- df |> mutate(lassitude = case_when(
+  lassitude == "1" ~ "1",
+  lassitude == "0" ~ "0",
+  TRUE ~ NA
+))
+
+df <- df |> mutate(raifinan = case_when(
+  raifinan == "1" ~ "1",
+  raifinan == "0" ~ "0",
+  TRUE ~ NA
+))
+
+
+df <- df |> mutate(trouvemp = case_when(
+  trouvemp == "1" ~ "1",
+  trouvemp == "0" ~ "0",
+  TRUE ~ NA
+))
+
+
+df <- df |> mutate(atnivo = case_when(
+  atnivo == "1" ~ "1",
+  atnivo == "0" ~ "0",
+  TRUE ~ NA
+))
+
+
+df <- df |> mutate(refuse = case_when(
+  refuse == "1" ~ "1",
+  refuse == "0" ~ "0",
+  TRUE ~ NA
+))
+
+df <- df |> mutate(vieact = case_when(
+  vieact == "1" ~ "1",
+  vieact == "0" ~ "0",
+  TRUE ~ NA
+))
+
+
+df <- df |> mutate(proxim = case_when(
+  proxim == "1" ~ "1",
+  proxim == "0" ~ "0",
+  TRUE ~ NA
+))
+
+df <- df |> mutate(autrerai = case_when(
+  autrerai == "1" ~ "1",
+  autrerai == "0" ~ "0",
+  TRUE ~ NA
+))
+
+
+df <- df %>%
+  mutate(secteur_etude = case_when(
+    phnsf >= 100 & phnsf <= 136 ~ "Général",
+    
+    phnsf >= 200 & phnsf <= 255 ~ "Industriel",
+    
+    phnsf >= 300 & phnsf <= 346 ~ "Services",
+    
+    TRUE ~ NA
+  ))
+
+df <- df |> mutate(reg_habitat = case_when(
+  ca0areg_13 %in% c(31, 22) ~ "Hauts-de-France",
+  ca0areg_13 %in% c(25, 23) ~ "Normandie",
+  ca0areg_13 == 11 ~ "Île-de-France",
+  ca0areg_13 %in% c(42, 21, 41) ~ "Grand Est",
+  ca0areg_13 %in% c(26, 43) ~ "Bourgogne-Franche-Comté",
+  ca0areg_13 == 24 ~ "Centre-Val de Loire",
+  ca0areg_13 == 52 ~ "Pays de la Loire",
+  ca0areg_13 == 53 ~ "Bretagne",
+  ca0areg_13 == 94 ~ "Corse",
+  ca0areg_13 %in% c(72, 54) ~ "Nouvelle-Aquitaine",
+  ca0areg_13 %in% c(91, 73) ~ "Occitanie",
+  ca0areg_13 %in% c(83, 82) ~ "Auvergne-Rhône-Alpes",
+  ca0areg_13 == 93 ~ "Provence-Alpes-Côte d’Azur",
+  ca0areg_13 == 97 ~ "DOM",
+  ca0areg_13 == 99 ~ "Etranger + Collectivités d'Outre-Mer (COM)",
+  TRUE ~ NA_character_
+))
+
+df <- df |> mutate(voyage = case_when(
+  etr1 == "1" ~ "Un seul",
+  etr1 == "2" ~ "Plusieurs",
+  etr1 == "3" ~ "Aucun",
+  TRUE ~ NA
+))
+
+df$voyage <- factor(df$voyage, levels = c("Aucun", "Un seul", "Plusieurs"))
+
+df <- df |> mutate(nbstage = case_when(
+  fp1 == "2" ~ "Aucun",
+  fp1a %in% c("1","2") ~ "Un ou deux",
+  fp1a %in% c("3","4","5","6") ~ "Trois ou plus",
+  TRUE ~ NA
+))
+
+df$nbstage <- factor(df$nbstage, levels = c("Aucun", "Un ou deux", "Trois ou plus"))
+
+df <- df |> mutate(nbxppro = case_when(
+  cfa == "1" ~ "Formation par apprentissage",
+  q50_13 == "1" ~ "Oui plusieurs",
+  q50_13 == "2" ~ "Oui, un seul",
+  q50_13 == "3" ~ "Non"
+))
+
+df <- df |> mutate(habde_15 = case_when(
+  habde_15 == "01" ~ "Vit chez ses parents",
+  habde_15 == "02" ~ "Vit en couple",
+  habde_15 == "03" ~ "Vit seul"
+))
+
+df$classe <- factor(part.labs, levels = c("NEET de long terme", "Non-NEET", "NEET fluctuants", "Repreneurs d'études"))
+
+month_details$classe <- factor(part.labs, levels = c("NEET de long terme", "Non-NEET", "NEET fluctuants", "Repreneurs d'études"))
+
+df <- df |> mutate(nmneet_15 = nmcho_15 + nmina_15)
+
+moy_neet <- by(df$nmneet_15, INDICES = df$classe, FUN = function(x) mean(x) |> round(2))
+
+df <- df |> mutate(classe_nmneet_15 = case_when(
+    nmneet_15 == 0 ~ "0 mois",
+    nmneet_15 %in% 1:3 ~ "1-3 mois",
+    nmneet_15 %in% 4:6 ~ "4-6 mois",
+    nmneet_15 %in% 7:12 ~ "7-12 mois",
+    nmneet_15 %in% 13:18 ~ "13-18 mois",
+    nmneet_15 %in% 19:24 ~ "19-24 mois",
+    nmneet_15 > 24 ~ "24 mois et plus",
+    TRUE ~ NA
+))
+
+
+df <- df |> mutate(nmneet_13 = nmcho_13 + nmina_13)
+
+df <- df |> mutate(classe_nmneet_13 = case_when(
+    nmneet_13 == 0 ~ "0 mois",
+    nmneet_13 %in% 1:3 ~ "1-3 mois",
+    nmneet_13 %in% 4:6 ~ "4-6 mois",
+    nmneet_13 %in% 7:12 ~ "7-12 mois",
+    nmneet_13 %in% 13:18 ~ "13-18 mois",
+    nmneet_13 %in% 19:24 ~ "19-24 mois",
+    nmneet_13 > 24 ~ "24 mois et plus",
+    TRUE ~ NA
+))
+
+
+df <- df |> mutate(nsneet_13 = nscho_13 + nsina_13)
+
+
+df$classe_nmneet_13 <- factor(df$classe_nmneet_13, levels = c("0 mois", "1-3 mois", "4-6 mois", "7-12 mois", "13-18 mois", "19-24 mois", "24 mois et plus"))
+
+df$classe_nmneet_15 <- factor(df$classe_nmneet_15, levels = c("0 mois", "1-3 mois", "4-6 mois", "7-12 mois", "13-18 mois", "19-24 mois", "24 mois et plus"))
+
+
+
+
+
+df <- df |> mutate(spring_2015 = case_when( 
+  df$dernier_mois == 1 ~ "Emplois",
+  df$dernier_mois == 2 ~ "NEET",
+  df$dernier_mois == 3 ~ "Formation",
+  df$dernier_mois == 4 ~ "Etude",
+  TRUE ~ NA
+  )) 
+
+
+
+
+df <- df %>%
+  mutate(
+    dep_contrat = as.factor(case_when(
+      contrat_15 == "01 Non salarié" ~ "Non salarié",
+      contrat_15 %in% c("02 CDI, Fonctionnaire") ~ "CDI, Fonctionnaire",
+      contrat_15 == "03 Contrat aidé" ~ "Contrat aidé",
+      contrat_15 %in% c("04 Emploi à durée déterminée") ~ "Emploi à durée déterminée",
+      contrat_15 %in% c("05 Intérim") ~ "Intérim",
+      TRUE ~ NA
+    ))
+  )
+
+df <- df |> mutate(ori_mere = case_when(
+  lieunmer == "00" ~ "Française",
+  lieunmer %in% c("07", "08") ~ "Africaine",
+  lieunmer == "" ~ NA,
+  TRUE ~ "Autre"
+))
+
+df$ori_mere <- factor(df$ori_mere, levels = c("Française", "Africaine", "Autre")) 
+
+
+df <- df |> mutate(ori_pere = case_when(
+  lieunper == "00" ~ "Français",
+  lieunper %in% c("07", "08") ~ "Africain",
+  lieunper == "" ~ NA,
+  TRUE ~ "Autre"
+))
+
+df$ori_pere <- factor(df$ori_pere, levels = c("Français", "Africain", "Autre")) 
+
+
+df <- df |> mutate(oripar = case_when(
+  ori_mere == "Française" & ori_pere == "Français" ~ "1",
+  ori_mere == "Française" & ori_pere == "Africain" | ori_mere == "Africaine" & ori_pere == "Français" ~ "2",
+  ori_mere == "Africaine" & ori_pere == "Africain" ~ "5",
+  TRUE ~ "autre"
+  
+))
+
+df <- df |> mutate(bac = case_when(
+  q36new == "1" ~ "Bac L",
+  q36new == "2" ~ "Bac ES",
+  q36new == "3" ~ "Bac S",
+  q36new == "9" ~ "zAutre bac général",
+  TRUE ~ "Pas de bac général"
+))
+
+
+df <- df %>%
+  mutate(type_etablissement = case_when(
+    type %in% c("A", "C", "D", "E", "F", "H", "P", "Q", "S", "T", "U", "V", "W") ~ "Public",
+    type %in% c("B", "J", "K", "L", "M", "R", "X", "Y", "Z") ~ "Privé",
+    TRUE ~ NA_character_  
+  ))
+
+df <- df |> mutate(nbstagexcfa = case_when(
+  cfa == "1" ~ "Apprentissage",
+  nbstage == "Aucun" ~ "Aucun",
+  nbstage == "Un ou deux" ~ "Un ou deux",
+  nbstage == "Trois ou plus" ~ "Trois ou plus",
+  TRUE ~ NA
+))
+
+df$nbstagexcfa <- factor(df$nbstagexcfa, levels = c("Apprentissage", "Aucun", "Un ou deux", "Trois ou plus"))
+
+df$cfa <- factor(df$cfa, levels = c(2,1))
+
+df$nmneet_update <- df$nmcho_update + df$nmina_update
+df$nsneet_update <- df$nscho_update + df$nsina_update
+
+df <- df |> mutate(classe_nmneet_update = case_when(
+    nmneet_update == 0 ~ "0 mois",
+    nmneet_update %in% 1:3 ~ "1-3 mois",
+    nmneet_update %in% 4:6 ~ "4-6 mois",
+    nmneet_update %in% 7:12 ~ "7-12 mois",
+    nmneet_update %in% 13:18 ~ "13-18 mois",
+    nmneet_update %in% 19:24 ~ "19-24 mois",
+    nmneet_update > 24 ~ "24 mois et plus",
+    TRUE ~ NA
+))
+
+df <- df %>%
+  mutate(
+    dep_contrat = as.factor(case_when(
+      contrat_15 == "01 Non salarié" ~ "Non salarié",
+      contrat_15 %in% c("02 CDI, Fonctionnaire") ~ "CDI, Fonctionnaire",
+      contrat_15 == "03 Contrat aidé" ~ "Contrat aidé",
+      contrat_15 %in% c("04 Emploi à durée déterminée") ~ "Emploi à durée déterminée",
+      contrat_15 == "05 Intérim" ~ "Intérim",
+      TRUE ~ "Autres"
+    ))
+  )
+
+df$dep_contrat <- factor(df$dep_contrat,
+                        levels = c(
+                          "Emploi à durée déterminée",
+                          "CDI, Fonctionnaire",
+                          "Contrat aidé",
+                          "Non salarié",
+                          "Intérim",
+                          "Autres"
+                        ))
+
+
+rm(mean_unmemployment, mean_unmemployment2)
+```
+
+## Création des tableaux
+```{r tabsrping15xclasse}
+tab_spring15xclasse <- (cbind(
+  table(
+    month_details$situation_15,
+    df$classe 
+  ),
+  table(month_details$situation_15)
+) |> 
+  prop.table(margin = 2) |> 
+  addmargins(margin = 1) |>
+  round(2) * 100)  
+  
+emp_neet <- table(df$dernier_mois, df$classe)  |> prop.table(margin = 2) |> round(2) * 100
+
+ens_emp_neet <- table(df$dernier_mois) |> prop.table() |> round(2) *100
+
+emp_neet <- cbind(
+  rbind(emp_neet[1,], emp_neet[2,]),
+  rbind(ens_emp_neet[1], ens_emp_neet[2])
+)
+
+
+tab_spring15xclasse <- rbind(
+  emp_neet[1,],
+  tab_spring15xclasse[1:5,],
+  emp_neet[2,],
+  tab_spring15xclasse[6:10,]
+)
+
+colnames(tab_spring15xclasse)[5] <- "Ensemble"
+rownames(tab_spring15xclasse)[12] <- "Total"
+rownames(tab_spring15xclasse)[1] <- "Emploi"
+rownames(tab_spring15xclasse)[7] <- "NEET"
+rownames(tab_spring15xclasse)[2] <- "- CDI, Fonctionnaire"
+rownames(tab_spring15xclasse)[3] <- "- Contrat aidé"
+rownames(tab_spring15xclasse)[4] <- "- Emploi à durée indéterminée"
+rownames(tab_spring15xclasse)[5] <- "- Intérim"
+rownames(tab_spring15xclasse)[6] <- "- Non salarié"
+rownames(tab_spring15xclasse)[8] <- "- Chômeurs"
+rownames(tab_spring15xclasse)[9] <- "- Inactivité"
+
+kab_spring15xclasse <- tab_spring15xclasse |> 
+  appli_kable(
+    titre = "Situation des individus à la date d'interrogation de 2015 selon leur groupe d'appartenance (en \\%)",
+    font.size = 10
+  ) |> 
+  footnote(
+    general_title = "",
+    general = c(
+      "Source : Céreq : Enquête Génération 2010 à 5 ans",
+      "Lecture : À la date d'interrogation de 2015 :",
+      "- 78% des Non-NEET ont un CDI ou sont fonctionnaires.",
+      "- 64% des individus de la population ont un CDI ou sont fonctionnaires.",
+      "- 95% des Non-NEET ont un emploi."
+    ),
+    fixed_small_size = T
+  ) |> 
+  column_spec(1, bold = T, border_right = T) |> 
+  column_spec(6, bold = T, border_left = T) |> 
+  add_indent(c(2:6, 8:9)) |> 
+  row_spec(c(1,6,7,9,11), hline_after = T) |> 
+  row_spec(12, bold = T)
+
+rm(emp_neet, moy_neet, ens_emp_neet)
+```
+
+```{r kab_phdxclasse}
+
+# niveau de diplôme
+tab_phdxclasse <- cbind(
+  table(df$phd_reduced, df$classe) |> prop.table(margin = 2) |> addmargins(margin = 1) |> round(2) * 100,
+  table(df$phd_reduced)|> prop.table() |> addmargins() |> round(2) * 100
+)
+
+colnames(tab_phdxclasse)[5] <- "Ensemble"
+rownames(tab_phdxclasse)[5] <- "Total"
+
+kab_phdxclasse <- tab_phdxclasse |> appli_kable(
+  titre = "Répartition des niveaux de diplôme parmi les différents groupes de NEET (en \\%)",
+  font.size = 10
+) |> 
+  row_spec(4, hline_after = T) |> 
+  row_spec(5, bold = T) |> 
+  column_spec(1, border_right = T, bold = T) |> 
+  column_spec(6, bold = T, border_left = T) |> 
+  footnote(
+    general_title = "",
+    general = c(
+    "Source : Céreq : Enquête Génération 2010 à 5 ans",
+    "Lecture : 21,5% des NEET de long terme sont diplômés d'un Bac+5 à la sortie de leurs études en 2010."
+    ),
+    fixed_small_size = T
+  ) 
+  
+```
+
+```{r kab_moy}
+
+moy_emp <- by(df$nmemp_update, INDICES = df$classe, FUN = function(x) mean(x) |> round(2)) 
+moy_etu <- by(df$nmetu_update, INDICES = df$classe, FUN = function(x) mean(x) |> round(2))
+moy_for <- by(df$nmfor_update, INDICES = df$classe, FUN = function(x) mean(x) |> round(2))
+moy_cho <- by(df$nmcho_update, INDICES = df$classe, FUN = function(x) mean(x) |> round(2))
+moy_ina <- by(df$nmina_update, INDICES = df$classe, FUN = function(x) mean(x) |> round(2))
+moy_neet <- by(df$nmneet_update, INDICES = df$classe, FUN = function(x) mean(x) |> round(2))
+tab_moy <- rbind(moy_emp, moy_etu, moy_for, moy_neet) |> prop.table(margin = 2)|> addmargins(margin = 1)  |> round(2) * 100
+
+other_tab_moy <- rbind(moy_emp, moy_etu, moy_for, moy_cho, moy_ina) |> prop.table(margin = 2) |>  round(2) * 100
+
+
+tab_moy <- rbind(
+  tab_moy[4,], 
+  other_tab_moy[4:5,], 
+  tab_moy[1:3,], 
+  tab_moy[5,]
+) 
+tab_moy <- cbind(
+  tab_moy,
+  rbind(
+    rbind(
+      mean(df$nmneet_update),
+      mean(df$nmemp_update),
+      mean(df$nmetu_update),
+      mean(df$nmfor_update)
+    ) |> prop.table() |> addmargins(margin = 1) |> round(2) * 100,
+    rbind(
+      mean(df$nmcho_update),
+      mean(df$nmina_update),
+      mean(df$nmemp_update),
+      mean(df$nmetu_update),
+      mean(df$nmfor_update)
+    ) |> prop.table() |> round(2) * 100
+  )[c(1, 6:7, 2:5)]
+    
+)
+
+
+rownames(tab_moy) <- c("NEET", "- Chômage", "- Inactivité", "Emplois", "Etude", "Formation", "Total")
+colnames(tab_moy)[5] <- "Ensemble"
+
+kab_moy <- tab_moy |> 
+  appli_kable(
+    titre = "Temps moyens passés dans chaque situation (en \\%)",
+    font.size = 10
+  ) |> 
+  footnote(
+    general_title = "",
+    general = c(
+      "Source : Cérec : Génération 2010",
+      "Lecture : Sur la période allant de janvier 2011 à décembre 2014 :",
+      "- les jeunes issus de la catégorie non-NEET ont passé en moyenne 4% du temps en situation de NEET.",
+      "- les jeunes ont passé en moyenne 13% du temps en situation de NEET."
+    ),
+    fixed_small_size = T) |> 
+  column_spec(1, bold = T, border_right = T) |>
+  add_indent(2:3) |> 
+  row_spec(c(1,3), hline_after = T) |> 
+  row_spec(7, bold = T) |> 
+  row_spec(6, hline_after = T) |> 
+  column_spec(6, border_left = T, bold = T)
+
+rm(moy_emp, moy_etu, moy_for, other_tab_moy)
+```
+
+```{r kab_neet}
+
+tab_neet <- table(df$classe_nmneet_update, df$classe) |> prop.table(margin = 2) |> round(2) * 100
+tab_neet <- tab_neet[c("0 mois", "1-3 mois", "4-6 mois", "7-12 mois", "13-18 mois", "19-24 mois", "24 mois et plus"),]
+
+tab_neet <- rbind(
+  by(df$nmneet_update, df$classe, mean) |> round(), 
+  by(df$nmcho_update, df$classe, mean)|> round(), 
+  by(df$nmina_update, df$classe, mean)|> round(), 
+  tab_neet
+  ) 
+
+ens_neet <- c(c(
+     mean(df$nmneet_update),
+     mean(df$nmcho_update),
+     mean(df$nmina_update)
+ ) |> round(),
+ table(df$classe_nmneet_update) |> prop.table() |> round(2) * 100
+)
+
+
+tab_neet <- cbind(tab_neet, ens_neet)
+
+
+
+rownames(tab_neet)[1] <- "- Durée moyenne en situation de NEET"
+rownames(tab_neet)[2] <- "- Durée moyenne au chômage"
+rownames(tab_neet)[3] <- "- Durée moyenne en inactivité"
+colnames(tab_neet)[5] <- "Ensemble"
+
+
+kab_neet <- tab_neet |> 
+  appli_kable(
+    titre = "Nombre de mois passés en situation de NEET (en \\%)",
+    font.size = 10
+  ) |> 
+  footnote(
+    general_title = "",
+    general = c(
+      "Source : Cérec : Génération 2010",
+      "Lecture : Sur la période allant de janvier 2011 à décembre 2014,",
+      "- 82% des jeunes issus de la catégorie NEET de long terme ont passé plus de 24 mois en situation de NEET.", 
+      "- les jeunes issus de la catégorie non-NEET ont passé en moyenne 2 mois en situation de NEET.",
+      "- les jeunes ont passé en moyenne 6 mois en situation de NEET.",
+      "- 45% des jeunes n'ont jamais connu la situation de NEET."
+    ),
+    fixed_small_size = T
+    ) |> 
+  column_spec(1, bold = T, border_right = T) |>
+  add_indent(c(1,2,3)) |> 
+  row_spec(3, hline_after = T) |> 
+  column_spec(6, bold = T, border_left = T)
+
+rm(ens_neet, moy_cho, moy_ina, moy_neet)
+```
+
+
+# Rédaction de l'étude
+
+## Introduction
+
+
+Les jeunes en difficulté d'insertion professionnelle représentent un défi persistant et complexe dans de nombreuses sociétés contemporaines. En 2018, selon Eurostat, 12,9 % des jeunes français âgés de 15 à 29 ans étaient classés comme NEET, c'est-à-dire ni en emploi, ni en éducation, ni en formation. Ce groupe présente des trajectoires variées, avec des taux allant de 6,3 % aux Pays-Bas à 29,8 % en Macédoine du Nord (Eurostat, 2018). L'exclusion sociale à laquelle ces jeunes sont confrontés (Bonnard et al., 2020), ainsi que le coût économique de leur situation, incitent les États européens à ajuster leurs politiques publiques pour favoriser leur intégration professionnelle. En 2011, le coût de la non-inclusion économique et sociale de l’ensemble des NEET était estimé à 22,2 milliards d’euros pour la France, représentant 1,11 % de son PIB (Eurofound, 2012). 
+
+Les crises économiques récentes, telles que celle provoquée par la pandémie de COVID-19, ainsi que d'autres crises sectorielles comme les crises immobilières, ont exacerbé cette précarité pour les jeunes diplômés (Redor, 2020). Par exemple, la crise sanitaire de 2020 a induit une hausse de 15,2% des demandeurs d'emploi n'ayant pas travaillé au cours du trimestre du 1er au 3ème trimestre 2020 des 15-24 ans contre 11,5% pour toutes autres classe d'âge (Pôle Emploi, 2020). Comprendre la trajectoire de ces jeunes est donc crucial pour élaborer des politiques publiques adaptées, telles que la Garantie jeunes instaurée en 2013 et étendue en 2017, bénéficiant à environ 80 000 NEET particulièrement vulnérables (INJEP : Institut National de la Jeunesse et de l'Éducation Populaire, 2020) ou encore le plan "1 jeune 1 solution". Pour analyser ces trajectoires complexes, plusieurs indicateurs sont utilisés, notamment le taux d'inactivité et le taux de chômage des jeunes. Toutefois, ces indicateurs traditionnels présentent des limites en ne couvrant qu'une facette du problème. L'acronyme NEET, apparu en 1999 pour remplacer les termes "Status Zer0", "Status A" et "Status 0", permet une approche plus nuancée et globale de l'étude de ces jeunes (Istance et al., 1994 ; Williamson, 1997). Cette nouvelle approche met en lumière ceux qui ne semblent pas accumuler de capital économique ou humain, contrairement au taux d'inactivité qui inclut les étudiants en phase d'accumulation de capital humain mais qui n'inclut pas les chômeurs, et au taux de chômage qui ne prend même pas en compte les inactifs. 
+
+Cependant, cette classification globale des NEET présente aussi certaines limites. D'une part, le terme tend à stigmatiser la population qu'il désigne, et d'autre part, il englobe une population fortement hétérogène. En effet, ce groupe inclut des chômeurs, qu'ils soient de longue ou de courte durée, des jeunes inactifs volontairement ou en raison de responsabilités familiales, des jeunes en situation de handicap ou souffrant de maladies contraignantes (Chusseau, 2023), des personnes issues de milieux familiaux complexes ou de classes sociales défavorisées, des jeunes femmes enceintes ou déjà mères, des jeunes prenant une année sabbatique, ainsi que des individus influencés par des facteurs culturels (Gatugu et Altay Manço, 2018). S'y ajoutent ceux résidant dans des zones géographiques à fort taux de chômage (Céreq : Centre d'études et de recherches sur les qualifications, 2020), des jeunes ayant un faible niveau d'études, des jeunes migrants ou réfugiés, ainsi que ceux faisant face à des discriminations raciales ou ethniques. 
+
+Il existe donc une multitude de facteurs qui peuvent influencer tant la situation professionnelle actuelle que future des jeunes, particulièrement lorsque plusieurs de ces éléments se cumulent. Par exemple, la naissance d'un enfant peut contraindre une jeune femme à l'inactivité et éventuellement à abandonner ses études de manière permanente (Céreq, 2020), transformant ainsi une période temporaire d'inactivité en une situation à long terme. De même, les jeunes issus de milieux à faible revenu peuvent se heurter à d'importants obstacles financiers qui limitent leurs possibilités de formation et d'emploi, notamment s'ils sont peu aidés par leurs parents (Francou, 2020). Cette complexité met en lumière les défis associés à l'utilisation du terme NEET. Une question pertinente à cet égard est de savoir si un jeune peut être qualifié de NEET s'il est inactif seulement pendant une semaine. Cette question souligne l'importance cruciale du type d'emploi accessible à ces jeunes, qu'il s'agisse de postes temporaires, permanents, d'intérim ou de contrats de professionnalisation. C'est aussi pour cette raison que la nature dynamique des parcours professionnels des individus ne doit pas être sous-estimée, tout comme la possibilité qu'une situation passée puisse influer sur la situation future de l'individu. D'ailleurs, les études de l'OCDE menées en 2010 ont mis en évidence que l'expérience du NEET pouvait avoir des effets durables, souvent qualifiés d'effet cicatrice, sur les jeunes et ce sont les jeunes NEET depuis plus d'un an qui sont les plus en difficultés (Dares : Direction de l'animation de la recherche, des études et des statistiques, 2020). Ainsi, il est essentiel d'identifier les principaux facteurs contribuant à cette situation et d'évaluer leur impact à court et à long terme, tout en distinguant les différents profils de NEET. 
+
+Dans ce cadre, cette étude se focalise sur la compréhension des facteurs qui influencent l'insertion professionnelle des jeunes en situation de NEET en se référant à la littérature existante sur ce sujet. En particulier, nous développerons une typologie des NEET en utilisant une analyse de séquence, que nous enrichirons avec d'autres facteurs déterminants. Par la suite, nous examinerons comment ces différents facteurs influencent les types de contrats de travail obtenus. La démarche économétrique nous permettra d'évaluer l'impact de ces facteurs sur la probabilité d'accéder à différents types d'emplois et d'identifier les trajectoires qui sont potentiellement plus favorables à une stabilité professionnelle. Enfin, nous discuterons des résultats obtenus afin de formuler des conclusions.
+
+
+## La Revue de la Littérature
+
+
+L’insertion des jeunes en difficulté sur le marché du travail constitue une problématique majeure pour de nombreuses sociétés contemporaines. Cependant, ce n’est que récemment que la littérature s’est interessée de manière significative, notamment au cours des deux dernières décennies au terme NEET. Nous allons examiner comment les facteurs explicatifs de cette situation de NEET touchent plusieurs aspects de la vie des individus, allant des caractéristiques individuelles et familiales aux spécificités de leur région d'habitation.
+
+### Typologie des NEET
+
+Les trajectoires des NEET peuvent varier considérablement. Giret et al., (2020) proposent une typologie des NEET propose une typologie des NEET basée sur la durée passée dans cette situation et le statut observé à la fin de la période d’étude. Ils identifient ainsi quatre groupes : 
+
+- Le premier groupe, les “Never NEET” (Non NEET), regroupe les jeunes qui n’ont jamais été en situation de NEET pendant plus de six mois après avoir quitté l’école et qui ne l’étaient pas au moment de l’enquête en 2013, représentant 60% de la population étudiée. Ce groupe a connu une transition favorable avec un accès rapide et soutenu à l'emploi pendant la majeure partie de la période de trois ans, et de rares épisodes de NEET. Environ 84% étaient en emploi stable au moment de l'enquête, tandis que 10% étaient en éducation ou en formation.
+
+- Le deuxième groupe, les “Begin NEET” (NEET au début), comprend ceux qui ont été NEET pendant au moins six mois consécutifs au début de la période, mais qui ne l’étaient plus au moment de l’enquête, constituant 15% de la population. Ces jeunes ont eu une transition initiale difficile avec une longue période de NEET (14 mois en moyenne), mais ils ont progressivement trouvé des emplois, principalement en CDD, puis se sont stabilisés à partir de la fin 2012. Au moment de l'enquête, 70% étaient en CDI et 20% en éducation.
+
+- Le troisième groupe, les “End NEET” (NEET à la fin), inclut les jeunes qui étaient NEET au moment de l’enquête en 2013, mais ne l’étaient pas au début de la période, représentant 12% de la population. Ces jeunes ont connu un accès rapide à l'emploi (en avril 2011, 40% avaient un CDI et 20% un CDD), mais à partir de mi-2012, ils ont rencontré des difficultés et avaient été NEET en moyenne 9 mois au printemps 2013.
+
+- Enfin, le quatrième groupe, les “Always NEET” (Toujours NEET), concerne les jeunes qui ont été en situation de NEET pendant plus de six mois consécutifs dès le début et le sont restés jusqu’à l’enquête en 2013, représentant 13% de la population. Ce groupe est le plus vulnérable, ayant passé 83% de la période en NEET (63% en chômage, 20% en inactivité) et seulement 14% en emploi. Ces jeunes sont restés NEET pendant longtemps, avec des épisodes rares et souvent temporaires d'emploi.
+
+Les descriptions de ces quatre sous-groupes révèlent des niveaux de vulnérabilité distincts, particulièrement marqués chez les jeunes du groupe 4, qui sont les plus éloignés d'une stabilité professionnelle. Cette typologie souligne la variété des parcours et montre que les facteurs influençant la situation de ces jeunes sont nombreux, affectant chacun d'eux de manière unique.
+
+
+
+### Les facteurs déterminants}
+
+#### Le Parcours Scolaire
+
+Un point commun aux nombreuses contributions scientifiques est que le parcours scolaire des individus est l'un des principaux, voire le principal facteur déterminant de leur insertion professionnelle. Le lien entre le niveau de diplôme le plus élevé obtenu par un individu et ses chances d'insertion professionnelle est particulièrement notable. Par exemple, 52% des NEET en 2018 avaient un niveau d'éducation inférieur au CAP/BEP (Dares, 2020). Cette conclusion est également corroborée par l’étude de Giret, Guégnard et Joseph (2020), qui montre que le niveau d’éducation est un facteur clé, les jeunes ayant un diplôme de l’enseignement supérieur ayant une probabilité réduite de devenir NEET. 
+
+Notons que les problèmes scolaires apparaissent souvent dès le collège, avec des élèves quittant l'école très tôt, ayant de nombreuses absences, subissant du harcèlement ou étant agités. Les erreurs d'aiguillage et la participation à de nombreux dispositifs de réinsertion sans réel résultat, conduisent souvent à un arrêt des études. Ces jeunes qui n'ont pas d'autre choix en raison de leur faible niveau d'études, acceptent souvent des emplois précaires et pénibles, qui sont en plus souvent temporaires (Couronné, 2018).
+En France, l'élévation du niveau de qualification moyen creuse davantage les inégalités entre les individus hautement qualifiés et ceux qui n'ont aucune qualification. Ce phénomène est d'ailleurs plus marqué parmi les populations les plus jeunes. Ces jeunes faiblement qualifiés sont d'autant plus vulnérables en contexte de crise, comme celle de la pandémie de 2019. En effet, les secteurs tels que la restauration, l'hôtellerie, le tourisme et le commerce traditionnel, qui emploient majoritairement une main-d'œuvre peu ou pas qualifiée, ont été particulièrement affectés. En revanche, les activités à haute valeur ajoutée, notamment celles liées à l'économie numérique, à l'informatique et à la recherche-développement, qui emploient des personnes hautement qualifiées, ont mieux résisté à la crise (Redor, 2020).
+
+
+
+#### Origine Sociale et Environnement de Vie}
+
+
+
+L'origine sociale des individus peut impacter leur situation professionnelle de diverses manières et sous différentes formes\footnote{Les jeunes issus de familles avec un père cadre bénéficient généralement d'un soutien éducatif et financier plus important, contrairement à ceux d'un milieu ouvrier. Une étude de l’INJEP (2020) montre que les jeunes en formation reçoivent davantage de soutien que les NEET, et que ceux dont le père est cadre ont plus de ressources. Selon le Céreq (2020), 12\% des jeunes NEET ont un père cadre, contre 20\% parmi ceux en emploi ou en formation, tandis qu'environ un tiers des NEET ont un père ouvrier.}. En effet, le rapport des parents au monde du travail est déterminant pour les perspectives des enfants, comme en témoigne le fait que 30 % des jeunes sortis d'études en 2004 avaient une mère au foyer, contre 17 % parmi ceux en emploi ou en formation (Céreq, 2020). Certains jeunes cumulent des difficultés familiales, vivant par exemple dans des foyers ou des familles d'accueil. De plus, pour certains d'entre eux, les démarches nécessaires pour rechercher un emploi n'ont pas été correctement enseignées. L'éventuelle prise en charge de parents malades ou handicapés peut aussi accentuer leurs responsabilités familiales et limiter leurs perspectives professionnelles. En outre, des expériences de discrimination lors des entretiens d'embauche peuvent également affecter négativement leur parcours professionnel, ajoutant des obstacles supplémentaires à leur insertion dans le monde du travail (OBS : Observatoire jeunes et société, 2016).
+
+Lorsqu'on aborde les difficultés des jeunes à trouver un emploi, il est souvent souligné la diminution significative des emplois peu qualifiés, particulièrement dans certaines régions du pays. Cette réalité suggère qu'une région avec un taux élevé de chômage pourrait également compter un nombre substantiel de NEET à long terme. Pour ces NEET, trouver un emploi devient particulièrement difficile dans des régions\footnote{La désindustrialisation massive dans certaines régions de notre pays contribue à accroître le chômage dans des secteurs industriels spécifiques, accentuant ainsi les inégalités déjà présentes entre jeunes hautement et faiblement qualifiés. Dans ce contexte, la possession d'un permis de conduire devient crucial pour les jeunes résidant dans des zones à faible emploi, leur permettant de se déplacer vers des pôles urbains importants où les opportunités d'emploi peuvent être plus nombreuses. De plus, l'accès à l'éducation peut être restreint en raison de la distance et du manque de formations disponibles localement. Certaines familles rurales peuvent également avoir une vision négative de l'endettement, ce qui peut entraver la poursuite des études supérieures malgré les opportunités existantes (OBS, 2016).} où les opportunités sont limitées. Le Céreq souligne l'importance du contexte local dans la probabilité de sortir de cette situation, notant un effet défavorable dans des régions comme le Nord-Pas-de-Calais, où le chômage reste élevé contrairement à des régions comme l'Île-de-France et Rhône-Alpes (Céreq, 2020). La décohabitation joue également un rôle crucial : les jeunes qui quittent le domicile familial pour vivre indépendamment sont généralement mieux intégrés, souvent grâce à un emploi qui leur permet de subvenir à leurs besoins. Il a été observé une corrélation positive entre le revenu et la propension à décohabiter, soulignant que les ressources financières facilitent cette transition (Julie Couronné, François Sarfati, 2018).
+
+
+#### Le Genre des Individus
+
+L'évolution des sociétés, notamment en France, a nettement amélioré l'insertion des femmes sur le marché du travail grâce à une élévation significative du niveau de qualification moyen parmi les femmes. Pour la génération 2010, parmi les femmes NEET cinq ans après la fin de la scolarité, 20% sont diplômées du supérieur contre 12% des hommes (Céreq, 2020). Leur situation tend à se rapprocher de celle des hommes au fil des années. Par exemple, parmi les 17 % de NEET identifiés (15-29 ans) par l'OCDE en 2017, 18 % étaient des jeunes femmes et 15 % des jeunes hommes.
+Cependant, la comparaison statistique entre les hommes et les femmes reste complexe. Il est difficile de conclure qu'une femme a plus de chances de devenir NEET, car cela dépend de divers facteurs, notamment culturels et familiaux. Pour une comparaison équitable, il faut considérer des hommes et des femmes dans des situations similaires. Par exemple, parmi les sortantes de la génération 2010, 74% des femmes ont un emploi contre 75% pour les hommes, 20% sont NEET et 6% sont en étude ou formation cinq ans après la fin des études. Les femmes enceintes qui ont déjà travaillé sont également susceptibles d'éviter la situation de NEET, grâce à leur expérience professionnelle antérieure. Toutefois, lorsque l'on s'intéresse aux jeunes ayant un enfant, près du tiers des femmes avec enfant sont en situation d'inactivité ou de chômage, alors que le nombre de NEET parmi les pères demeure relativement bas (9%). Cela témoigne des rôles sociaux différenciés, notamment dans les responsabilités familiales, et démontre qu'il faut comparer prudemment les hommes et les femmes, car les différences sont fortement influencées par leur situation personnelle.
+
+
+#### Santé/handicap de l'individu
+
+Une étude suisse menée par l'Orientation scolaire et professionnelle (OSP) publiée en 2020 s'est penchée sur la psychologie des jeunes en situation de NEET. Cette étude a conclu que cette catégorie de jeunes présente un risque plus élevé de troubles mentaux tels que la dépression et l'anxiété. Bien que ces troubles puissent être causés par la situation de NEET elle-même, il est important de noter que les jeunes souffrant de ces troubles sont naturellement dans une position plus vulnérable et auront probablement plus de difficultés à retrouver un emploi. Même s'ils parviennent à en trouver un, ces troubles mentaux pourraient les empêcher de l'exercer sereinement, les conduisant potentiellement à redevenir NEET.
+
+En outre, un axe de l'étude publiée par la DARES en 2020 a permis de mettre en lumière les difficultés d'insertion professionnelle des jeunes ayant un handicap reconnu administrativement. Selon cette étude, en 2018, 52 % des jeunes sortis de formation initiale ayant un handicap reconnu administrativement étaient NEET, soit 24 points de pourcentage de plus que la moyenne générale. Cette situation souligne les obstacles supplémentaires que ces jeunes doivent surmonter pour s'insérer professionnellement.
+
+
+
+L'étude des NEET révèle une complexité notable dans les trajectoires et les facteurs déterminants qui influencent l'insertion des jeunes sur le marché du travail. La typologie des NEET montre que les parcours peuvent varier considérablement, allant des jeunes qui ne connaissent que des épisodes temporaires de NEET à ceux qui sont en situation de NEET sur le long terme. Parmi les facteurs déterminants, le parcours scolaire apparaît comme l'élément le plus important, avec un lien fort entre le niveau d'éducation et les chances d'insertion professionnelle et la stabilité professionnelle. De plus, l'origine sociale influence les ressources et le soutien disponibles pour les jeunes. Le contexte local, marqué par des différences régionales en termes de taux de chômage et de désindustrialisation, accentue également les inégalités. Le genre et la situation familiale ajoutent une dimension supplémentaire de complexité, avec des responsabilités et des attentes sociales différenciées entre hommes et femmes. Enfin, la santé mentale et le handicap constituent des obstacles majeurs pour l'insertion professionnelle des jeunes NEET. Il faut aussi noter que certains de ces facteurs peuvent influencer la carrière d'un individu sur le long terme tandis que d'autres ne pourraient l'influencer que sur un court terme.
+
+
+## Données
+
+
+### Constitution de l'échantillon
+
+Au cours de cette étude, vous découvrirez les différentes trajectoires professionnelles envisageables pour des jeunes individus ayant arrêté leurs études en 2010, des résultats définis grâce au suivi longitudinal de l'enquête *Génération 2010 à 5 ans* proposé par le Céreq. Cette enquête réalisée par téléphone avec saisie simultanée des réponses sur ordinateur grâce au système CATI (Computer Assisted Telephone Interview) dans des établissements scolaires et des universités françaises a permis de suivre l'évolution des carrières professionnelles des individus tout en les connectant avec de nombreuses caractéristiques individuelles. L'anonymat des individus étudiés a été préservé lors du suivi et le sera donc aussi tout au long de cette étude. Nous avons donc à disposition, une base de données comportant `r nrow(df)` individus qui ont quitté le système scolaire français en 2010 avec un suivi mois par mois de leur situation professionnelle.
+
+Cette section débutera par une étude général des différentes trajectoires, puis nous chercherons par la suite à distinguer les différents types d'individus de notre étude grâce à une analyse des séquences sur la période allant de janvier 2011 à décembre 2014. Enfin, nous examinerons la liaison entre certaines caractéristiques individuelles comme le genre, la catégorie socio-professionnelle des parents ou encore le niveau d'études, et la classification des individus. La population analysée par cette étude sont les jeunes de 15 à 24 ans qui ont arrêté leurs études en 2010, en se concentrant uniquement sur ceux ayant quitté le secteur de l’enseignement supérieur, qu'ils aient obtenu un diplôme ou abandonné. Cette sélection affine notre échantillon à `r nrow(df)` observations. L’analyse de leur trajectoire professionnelle est rendue possible par le calendrier professionnel mensuel établi par l’enquête du Céreq, permettant de suivre les individus dans quatre situations : emploi, NEET (comprenant inactifs et chômeurs), formation, et études (certains peuvent reprendre des études durant la période d’observation).
+
+
+### Analyse descriptive
+
+#### Présentation globale des individus
+
+Ces jeunes recherchaient une situation professionnelle peu de temps après la crise économique de 2008, ce qui pourrait fortement influencer les chiffres obtenus. Ainsi, on relèvera que 85% des individus de notre échantillon avaient un emploi à la date d'interrogation de 2015 (environ 64% en CDI ou en contrat de la fonction publique, 12% en emploi à durée déterminée, 3% en contrat aidé, 2% en contrat d'intérim et 4% comme non salarié), environ 9% en situation de NEET (environ 8% de chômeurs et 2% d'inactifs), 1% en formation et 4% en étude. 
+
+
+```{r global_seq_plot_afi, fig.cap="Source : Céreq : Enquête Génération 2010 à 5 ans"}
+global_seq_plot
+```
+
+```{r vrac_stat, eval = FALSE}
+df |> 
+  filter(
+    nmcho_update + nmina_update > 0
+    ) |> 
+  summarize(
+    mean_nmneet_update = mean(nmcho_update + nmina_update, na.rm = TRUE),
+    )
+
+df |> 
+  filter(
+    nmcho_update > 0
+    ) |> 
+  summarize(
+    mean_nmneet_update = mean(nmcho_update + nmina_update, na.rm = TRUE),
+    )
+
+df |> 
+  filter(
+    nmina_update > 0
+    ) |> 
+  summarize(
+    mean_nmneet_update = mean(nmcho_update + nmina_update, na.rm = TRUE), 
+    )
+
+by(
+  df[df$nmina_update > 0, ]$nmina_update,
+  df[df$nmina_update > 0, ]$sexe,
+  mean
+)
+
+df |> 
+  filter(
+    nsina_update > 0
+  ) |> 
+  summarise(
+    mean(nmina_update, na.rm = T), .by = sexe
+  )
+
+df$nsneet_update |> table() |> prop.table() |> round(2) * 100
+df$mois15 |> table() |> prop.table() |> round(3)
+df$mois27 |> table() |> prop.table() |> round(3)
+max(df$nmneet_update)/48
+table(df$nsneet_update) |> prop.table() |> round(3) * 100
+```
+
+```{r tabspring_15xphd}
+tab_spring15xphd <- cbind(
+  rbind(
+    (df |> 
+      select(
+        dernier_mois,
+        phd_reduced
+      ) |> 
+      table() |> 
+      prop.table(margin = 2) |> 
+      addmargins(margin = 1) |> 
+      round(2) * 100)[1:2, ],
+    
+    month_details |> 
+      select(
+        situation_15,
+        phd_reduced
+      ) |> 
+      table() |> 
+      prop.table(margin = 2) |> 
+      addmargins(margin = 1) |> 
+      round(2) * 100
+  ),
+  c(
+    (df |> 
+      select(
+        dernier_mois
+      ) |> 
+      table() |> 
+      prop.table() |> 
+      addmargins() |> 
+      round(2) * 100)[1:2],
+    month_details |> 
+      select(
+        situation_15
+      ) |> 
+      table() |> 
+      prop.table() |> 
+      addmargins() |> 
+      round(2) * 100
+  )
+)[c(1, 3:7, 2, 8:9, 10, 11, 12), ]
+
+rownames(tab_spring15xphd)[c(1:9, 12)] <- c(
+  "Emploi", 
+  "- CDI, Fonctionnaire", 
+  "- Contrat aidé",
+  "- Emploi à durée indéterminée",
+  "- Intérim",
+  "- Non salarié",
+  "NEET",
+  "- Chômage",
+  "- Inactivité",
+  "Total"
+)
+
+colnames(tab_spring15xphd)[5] <- "Ensemble"
+
+kab_spring15xphd <- tab_spring15xphd |> 
+  appli_kable(
+    titre = "Situation à la date d'interrogation de 2015 selon le plus haut diplôme obtenu (en \\%)",
+    font.size = 10
+  ) |> 
+  add_indent(c(2:6, 8:9)) |> 
+  row_spec(c(1,7), bold = T) |> 
+  row_spec(0, bold = T) |> 
+  row_spec(c(1,6,7,9,11), hline_after = T) |> 
+  column_spec(1, bold = T, border_right = T) |> 
+  column_spec(6, bold = T, border_left = T) |> 
+  footnote(
+    general_title = "",
+    general = c(
+      "Source : Céreq : Enquête Génération 2010 à 5 ans",
+      "Lecture : À la date d'interrogation de 2015 :",
+      "- 71% des jeunes titulaires du baccalauréat ou non-diplômés ont un emploi.",
+      "- 85% des jeunes ont un emploi.",
+      "- 77% des jeunes titulaire d'un diplôme de niveau bac+5 ou de niveau supérieur ont un CDI ou un poste de fonctionnaire."
+    )
+  )
+```
+
+Entre janvier 2011 et décembre 2014, la situation de NEET est particulièrement fréquente au sein de notre échantillon. En effet, 55% des individus ont connu au moins une période en situation de NEET : 28% ont vécu une seule période, 16% en ont connu deux, 7% en ont traversé trois, et 4% en ont expérimenté plus de trois. Pour ceux ayant vécu au moins une période de NEET, la durée moyenne totale en situation de NEET est d'environ 11 mois. Parmi ces individus, ceux confrontés au chômage passent en moyenne 12 mois en situation de NEET, tandis que ceux confrontés à l’inactivité ont vécu en moyenne 13 mois en situation de NEET. On observe également que les femmes connaissent une durée moyenne plus longue en situation d'inactivité que les hommes, avec environ 9 mois pour les femmes contre 7 mois pour les hommes.
+
+La situation de NEET peut varier considérablement en fonction du contexte. Certains individus la vivent comme une phase temporaire, par exemple, ceux qui viennent de terminer leurs études et cherchent un emploi ; ainsi, le pourcentage de NEET est passé de 27% en janvier 2011 à 13% en janvier 2012, reflétant un état transitoire. En revanche, d’autres individus vivent le NEET sur le long terme, ce qui en fait une situation plus permanente ; ainsi, l'individu ayant le plus longtemps vécu en situation de NEET y est resté de janvier 2011 à décembre 2014. Il existe aussi des individus qui alternent entre périodes d'emploi et phases de NEET.
+
+En outre, la proportion d'individus en situation de NEET diminue avec le niveau de diplôme. À la date d'interrogation de 2015, 15% des titulaires du baccalauréat ou non-diplômés se trouvent en situation de NEET, contre seulement 6% des personnes diplômées de BAC+5 ou d'un diplôme de niveau supérieur. Cela suggère qu’un niveau de diplôme plus élevé est associé à une meilleure chance d'obtenir un emploi, bien que cela ne garantisse pas une stabilité professionnelle totale. De plus, les titulaires d'un diplôme de BAC+5 ou supérieur ont un accès plus facile à des contrats de travail garantissant une stabilité professionnelle, avec 77% d'entre eux bénéficiant d'un CDI ou étant fonctionnaires, contre seulement 37% des titulaires du baccalauréat.
+
+Pour approfondir notre compréhension de la dynamique des trajectoires en situation de NEET, nous allons utiliser une approche analytique longitudinale basée sur la durée passée dans chaque situation (Emploi, NEET, Formation, reprise des études). L'objectif principal de cette approche est de distinguer les individus en fonction de la nature et de la durée de leur situation de NEET. Une fois ces groupes identifiés, l'étape suivante consistera à analyser les raisons expliquant pourquoi les individus se retrouvent dans leur situation spécifique de NEET, à travers une analyse descriptive détaillée de ces groupes.
+
+
+
+#### Classification des individus selon leur trajectoire de vie
+
+La classification des individus selon leur trajectoire de vie a aboutit sur la création de 5 groupes distincts :
+
+```{r group_seq_plot, fig.width=10, fig.height=7, fig.cap="Source : Céreq : Enquête Génération 2010 à 5 ans"}
+group_seq_plot
+```
+
+```{r vrac_stat_group, eval = FALSE}
+by(df$nmneet_update, df$classe, mean)
+table(df$classe) |> prop.table() |> round(3) * 100
+table(df$mois15, df$classe) |> prop.table(margin = 2) |> round(3) *100
+table(df$mois27, df$classe) |> prop.table(margin = 2) |> round(3) *100
+```
+
+Groupe 1, Non-NEET :
+
+- Les membres de ce groupe ont passé très peu de temps en situation de NEET, avec une durée moyenne de 2 mois entre janvier 2011 et décembre 2014.
+- Ce groupe, le plus important de notre échantillon, comprend 2810 individus, soit 71% de la population étudiée.
+
+Groupe 2, Repreneurs d'études :
+
+- Ce groupe est composé d'individus ayant repris des études durant la période d'observation.
+- En janvier 2011, 62% d'entre eux étaient employés, et aucun n'était en études.
+- À la date d'interrogation de 2015, 59% étaient employés, tandis qu'environ 31% étaient en études.
+- Ce groupe compte 354 individus, soit environ 9% de la population.
+
+Groupe 3, NEET fluctuant :
+
+- Ce groupe inclut des individus ayant connu de longues périodes en situation de NEET et d'emploi. Certains ont alterné entre les deux, d'autres ont vécu une longue période de NEET avant d'obtenir un emploi, ou se sont intégrés rapidement au marché du travail avant de rencontrer des difficultés vers la fin de la période d'observation.
+- En moyenne, ces individus ont passé environ 15 mois en situation de NEET, représentant 31% de la période d'observation.
+- Ce groupe contient 514 individus, soit 13% de la population étudiée.
+
+Groupe 4, NEET de long terme :
+
+- Les individus de ce groupe, les plus vulnérables de notre échantillon, rencontrent de grandes difficultés d'insertion professionnelle. Sur la période d'observation, ils ont passé en moyenne 33 mois en situation de NEET, soit environ 69% de la période.
+- Ce groupe comprend 286 individus, représentant 7% de la population étudiée.
+
+
+Les « NEET fluctuants » rencontrent des difficultés d'insertion sur le marché du travail. Parmi eux, 94% ont passé au moins 7 mois en situation de NEET, mais ils ont progressivement trouvé des emplois. Lors de l'enquête de 2015, 73% de ces individus étaient sous contrat de travail, dont 39% en contrat à durée indéterminée (CDI) ou en poste de fonctionnaire.
+En revanche, le groupe 1, constitué de jeunes « Non-NEET », a connu une transition très favorable vers l'emploi, accédant rapidement et durablement au marché du travail pendant la majeure partie des quatre ans de la période observée, avec de rares épisodes de NEET. À la date d'interrogation de 2015, 95% de ce groupe étaient en emploi, dont environ 78% en CDI ou en tant que fonctionnaires.
+À l'opposé, les « NEET de long terme » ont vécu une situation difficile, caractérisée par de longues périodes de NEET et peu d'épisodes d'emploi. Environ 82% d'entre eux ont passé plus de 24 mois en situation de NEET, représentant plus de la moitié de la période d'observation, et rencontrent donc les plus grandes difficultés pour s'insérer sur le marché du travail.
+Le groupe des "Repreneurs d'études" regroupe plusieurs situations. Une grande partie d'entre eux (62%) avait trouvé un emploi en janvier 2011, tandis que 35% étaient en situation de NEET. Cependant, au cours de la période, beaucoup ont repris les études (66% étaient en études en janvier 2012), réduisant ainsi la part de ceux en emploi et en situation de NEET à respectivement 30% et 3%. Printemps 2015, une grande partie de ce groupe était insérée dans le marché du travail (59%).
+En comparant le temps passé en emploi et en NEET, les « NEET de long terme » ont passé environ 68% de leur temps en NEET, dont 52% au chômage et 16% en inactivité, et seulement 21% en emploi. Les « NEET fluctuants » s'en sortent relativement mieux, ayant passé environ 32% du temps en NEET et 62% en emploi. Les « Repreneurs d'études » ont consacré 38% de leur temps à l'emploi, 12% en NEET, et 51% en études ou en formation. Enfin, les « Non-NEET » sont les mieux lotis, ayant passé 96% de leur temps en emploi et seulement 4% en NEET sur les quatre ans.
+
+
+```{r kabmoy}
+kab_moy # Durée moyenne (jusqu'à 2013, en %)
+```
+
+```{r kabspringxclasse}
+kab_spring15xclasse # Situation 2013 x classe
+```
+
+```{r kabneet}
+kab_neet # Temps passée en situation de NEET (2013)
+```
+
+```{r df_contrat}
+df_contrat <- df |> filter(!is.na(dep_contrat))
+df_contrat$dep_contrat <- factor(
+  df_contrat$dep_contrat,
+  levels = c(
+    "Emploi à durée déterminée",
+    "CDI, Fonctionnaire",
+    "Non salarié",
+    "Intérim",
+    "Contrat aidé"
+  )
+  )
+```
+
+
+#### Les facteurs favorisant une meilleur insertion professionnelle
+
+##### Le niveau de diplôme reste un des facteurs les plus déterminants
+
+Plus le niveau de diplôme est élevé, plus les chances d'échapper à une situation de NEET augmentent. Un haut niveau de qualification facilite une meilleure insertion professionnelle, tant à court terme qu'à long terme. Cette tendance est bien illustrée par le tableau \ref{tab:kab_phdxclasse}, où les titulaires d'un Bac+5 ou d'un doctorat sont surreprésentés parmi les Non-NEET (35%), alors qu'ils ne constituent que 30 % de l'ensemble de l'échantillon. Ces chiffres démontrent que des diplômes de niveau supérieur offrent une plus grande stabilité professionnelle et de meilleures opportunités.
+En revanche, pour les individus ayant un niveau de diplôme plus faible, la situation est différente. Par exemple, 40% des NEET de long terme sont titulaires d'un Bac ou n'ont aucun diplôme, contre 32% pour les Repreneurs d'études et 28% pour les NEET fluctuants, alors que ces niveaux de diplôme ne représentent que 19% de l'ensemble de l'échantillon. Les NEET de long terme et les NEET fluctuants sont également surreprésentés parmi les titulaires d'un Bac+2 ou d'un diplôme équivalent, avec tous les deux 32%, bien que ces derniers ne constituent que 30% de l'échantillon total. Enfin, une grande part (27%) des Repreneurs d'études sont diplômés d'un Bac+3/4 ou d'un Bac+2/3 en santé et social. À ce niveau, le secteur d'étude semble jouer un rôle plus significatif dans la trajectoire professionnelle. Certains secteurs requièrent des niveaux d'études plus élevés pour garantir une insertion réussie sur le marché du travail, ce qui peut expliquer pourquoi ces individus ont eu tendance à reprendre les études durant la période d'observation. Ainsi, le tableau \ref{tab:kab_phdxclasse} révèle que posséder un faible niveau de diplôme peut entraîner une longue période de non-emploi pour les jeunes, qu'il s'agisse d'inactivité prolongée ou de chômage.
+
+Le tableau \ref{tab:tabspring_15xphd} montre un impact du niveau de diplôme sur le type de contrat obtenu par les individus à la date d'interrogation de 2015. Les titulaires de diplômes de niveau supérieur, tels que Bac+5 ou doctorat, ont une plus grande probabilité d'accéder à des emplois stables et de qualité. En effet, 77% des diplômés de Bac+5 ou doctorat sont en CDI ou fonctionnaires, contre seulement 37% pour les individus ayant un Bac ou moins. De plus, la proportion de contrats aidés diminue fortement avec l'augmentation du niveau de qualification : quasiment aucun des titulaires du Bac+5 ou doctorants occupent des contrats aidés, comparé à 9% pour les Bac ou non-diplômés. Les emplois à durée déterminée sont également moins fréquents parmi les titulaires de diplômes élevés (10% pour Bac+5 ou doctorat) par rapport à ceux ayant un Bac ou moins (16%).
+Les différences sont également marquées dans les catégories d'emploi intérimaire et non salarié, où les titulaires de diplômes inférieurs sont plus représentés. Par exemple, 4% des Bac ou non-diplômés travaillent en intérim contre seulement 1% des Bac+5 ou doctorants. Globalement, ces résultats montrent que plus le niveau de diplôme est élevé, plus les chances d'obtenir un emploi stable et de qualité augmentent. Les titulaires de diplômes supérieurs bénéficient d'une insertion professionnelle plus favorable, avec une prédominance des contrats à durée indéterminée ou de fonctionnaires, tandis que les moins diplômés se trouvent plus souvent en contrats précaires ou en situation de NEET. Cette tendance souligne l'importance de l'éducation et des qualifications pour l'accès à des emplois stables et bien rémunérés, tout en rappelant qu'un haut niveau d'étude ne permet pas d'éviter à coup sûr la précarité des emplois.
+
+```{r kabphdxclasse}
+kab_phdxclasse # Phd x Classe
+```
+
+```{r kabspring15xphd}
+kab_spring15xphd
+```
+
+
+##### Le rapport au monde professionnel ne doit pas être sous-estimé durant les études
+
+Les stages et les connexions avec le monde professionnel durant les études jouent un rôle dans l'insertion professionnelle. Ils permettent aux étudiants de se familiariser avec les exigences du marché du travail, de construire un réseau de contacts et d'acquérir une expérience directement valorisable, facilitant ainsi leur transition vers l'emploi à la fin de leurs études.
+Le tableau \ref{tab:tabrappxclasse} révèle une nette différence entre les jeunes ayant effectué un apprentissage et ceux qui n'en ont pas eu l'opportunité. En effet, parmi les NEET de long terme et les Repreneurs d'études, 92% n'ont pas effectué d'apprentissage, contre seulement 8% qui en ont réalisé un. En revanche, parmi les Non-NEET et les NEET fluctuants, on observe des proportions plus élevées d'apprentis, avec respectivement 21% et 12% ayant suivi cette voie. Cette surreprésentation souligne que l'apprentissage est fortement associé à une meilleure insertion professionnelle et contribue à réduire le risque de se retrouver en situation de NEET.
+Pour les jeunes qui n'ont pas eu la possibilité de réaliser un apprentissage, les stages jouent un rôle déterminant dans le lancement de leur carrière. Le tableau \ref{tab:tabrappxclasse} montre que 46% des NEET de long terme et des Repreneurs d'éutdes n'ont effectué aucun stage, contre seulement 19% parmi les Non-NEET et 31% parmi les NEET fluctuants. De plus, les jeunes ayant réalisé trois stages ou plus sont mieux représentés parmi les Non-NEET (27%) et les NEET fluctuants (23%) que parmi les NEET de long terme (14%) et les Repreneurs d'études (12 %). Cela met en évidence que, même sans apprentissage, les stages contribuent à améliorer les perspectives d'emploi et à éviter les longues périodes de non-emploi.
+Ainsi, que ce soit par le biais d'un apprentissage ou de stages, l'expérience professionnelle acquise pendant les études est essentielle pour faciliter la transition vers l'emploi et minimiser le risque de se retrouver en situation de NEET.
+
+Le tableau \ref{tab:kabrappxcontrat} montre comment le type de contrat varie en fonction de l'expérience professionnelle acquise durant les études. Parmi les jeunes qui ont un emploi à la date d'enquête, ceux qui ont effectué un apprentissage représentent une proportion plus faible dans toutes les catégories d'emploi précaire : 8% en emploi à durée déterminée, 14% en intérim, et 9% en contrat aidé. En revanche, ces jeunes constituent 22% des CDI ou contrats de la fonction publique et 20 % des non-salariés, ce qui souligne l'importance de l'apprentissage dans l'obtention de contrats stables.
+Les stages jouent également un rôle déterminant dans l'amélioration de la stabilité de l'emploi. Parmi les jeunes en contrat aidé, 55% n'ont réalisé aucun stage, contre seulement 18% parmi ceux en CDI ou fonctionnaires et 24% des non-salariés. Les jeunes ayant effectué un ou deux stages représentent 38% des emplois à durée déterminée et 33% des CDI ou fonctionnaires, démontrant une transition progressive vers des emplois plus stables. La réalisation de trois stages ou plus augmente encore ces chances, représentant 27% des CDI ou fonctionnaires. Cette proportion est plus élevée parmi les CDI ou fonctionnaires et les non-salariés (27%) que parmi ceux en emploi à durée déterminée (20%), en intérim (20%), et en contrat aidé (12%).
+Ces résultats montrent que l'expérience professionnelle acquise pendant les études, que ce soit par le biais de l'apprentissage ou des stages, peut aider à obtenir des emplois stables et de qualité. Les stages, même en nombre réduit, contribuent à l'obtention de CDI ou de postes de fonctionnaire, tandis que l'apprentissage offre une voie encore plus directe vers des contrats de travail durables et sécurisés. Il est également notable que les non-salariés ont une répartition semblable aux CDI et fonctionnaires, indiquant une association entre ces types de contrat et une meilleure stabilité de l'emploi. En revanche, les autres types de contrats sont plus fréquemment associés à des parcours professionnels marqués par une plus grande précarité.
+
+```{r tabrappxclasse}
+tab_rappxclasse <- rbind(
+  c(
+  (table(df$cfa, df$classe) |> prop.table(margin = 2) |> round(2) *100)[1,],
+  (table(df$cfa) |> prop.table() |> round(2) * 100)[1]
+),
+  cbind(
+ table(df$nbstagexcfa, df$classe) |>  prop.table(margin = 2) |>  addmargins(margin = 1) |> round(2) * 100,
+ table(df$nbstagexcfa) |> prop.table() |> addmargins() |> round(2) * 100
+)
+)
+
+tab_rappxclasse <- tab_rappxclasse[
+  c(1,3:5,2,6),
+]
+
+
+
+rownames(tab_rappxclasse)[1] <- "N'ont pas effectué d'apprentissage"
+rownames(tab_rappxclasse)[2] <- "- Aucun stage"
+rownames(tab_rappxclasse)[3] <- "- Un ou deux stages"
+rownames(tab_rappxclasse)[4] <- "- Trois stages ou plus"
+rownames(tab_rappxclasse)[6] <- "Total"
+colnames(tab_rappxclasse)[5] <- "Ensemble"
+
+kab_rappx_classe <- tab_rappxclasse |> 
+  appli_kable(
+    titre = "Le rapport au monde professionnel joue-t-il un rôle significatif dans l'insertion professionnelle (en \\%) ?",
+    font.size = 10
+  ) |> 
+  add_indent(c(2:4)) |>
+  row_spec(1, hline_after = T) |> 
+  row_spec(6, bold = T) |> 
+  column_spec(6, bold = T, border_left = T) |> 
+  column_spec(1, bold = T, border_right = T) |> 
+  row_spec(c(4,5), hline_after = T) |> 
+  footnote(
+    general_title = "",
+    fixed_small_size = T,
+    general = c(
+      "Source : Céreq : Enquête Génération 2010 à 5 ans",
+      "Lecture : Au cours de leurs études :",
+      "- 46% des jeunes classifiés NEET de long terme n'ont effectué aucun stage.",
+      "- 79% des Non-NEET n'ont pas effectué d'apprentissage.",
+      "- 18% des jeunes ont effectué un apprentissage."
+    )
+  )
+```
+
+```{r kaprappxclasse}
+kab_rappx_classe
+```
+
+```{r kabrappxcontrat}
+tab_rappxcontrat <- rbind(
+  c(
+  (table(df_contrat$cfa, df_contrat$dep_contrat) |> prop.table(margin = 2) |> round(2) *100)[1,],
+  (table(df_contrat$cfa) |> prop.table() |> round(2) * 100)[1]
+),
+  cbind(
+ table(df_contrat$nbstagexcfa, df_contrat$dep_contrat) |>  prop.table(margin = 2) |>  addmargins(margin = 1) |> round(2) * 100,
+ table(df_contrat$nbstagexcfa) |> prop.table() |> addmargins() |> round(2) * 100
+)
+)
+
+tab_rappxcontrat <- tab_rappxcontrat[
+  c(1,3:5,2,6),
+]
+
+
+
+rownames(tab_rappxcontrat)[1] <- "N'ont pas effectué d'apprentissage"
+rownames(tab_rappxcontrat)[2] <- "- Aucun stage"
+rownames(tab_rappxcontrat)[3] <- "- Un ou deux stages"
+rownames(tab_rappxcontrat)[4] <- "- Trois stages ou plus"
+rownames(tab_rappxcontrat)[6] <- "Total"
+colnames(tab_rappxcontrat)[6] <- "Ensemble"
+
+
+tab_rappxcontrat |> 
+  appli_kable(
+    titre = "Le rapport au monde professionnel joue-t-il un rôle significatif sur le type de contrat (en \\%) ?",
+    font.size = 10
+  ) |> 
+  add_indent(c(2:4)) |>
+  row_spec(1, hline_after = T) |> 
+  row_spec(6, bold = T) |> 
+  column_spec(7, bold = T, border_left = T) |> 
+  column_spec(1, bold = T, border_right = T) |> 
+  row_spec(c(4,5), hline_after = T) |> 
+  footnote(
+    general_title = "",
+    fixed_small_size = T,
+    general = c(
+      "Source : Céreq : Enquête Génération 2010 à 5 ans",
+      "Lecture : Parmi les jeunes en emploi à la date d'enquête :",
+      "- 34% des jeunes en emplois à durée déterminée n'ont effectué aucun stage au cours de leurs études.",
+      "- 78% des jeunes en CDI ou fonctionnaires n'ont pas effectué d'apprentissage au cours de leurs études.",
+      "- 18% des jeunes ont effectué un apprentissage au cours de leurs études."
+    )
+  )
+```
+
+
+##### L'environnement familial impacte-t-il l'emploi de l'individu ?
+
+
+Le tableau \ref{tab:tab_envfamxcontrat} montre que 62% des jeunes dont les parents sont d'origine africaine avaient un CDI ou un poste de fonctionnaire au printemps 2015, contre 76% pour ceux avec deux parents français d'origine. De plus, les jeunes dont les parents sont d'origine africaine sont proportionnellement plus nombreux à occuper un emploi à durée déterminée (23%) par rapport à ceux dont les parents sont français d'origine (13%). Ces données indiquent que les jeunes issus de parents d'origine africaine sont non seulement moins susceptibles d'obtenir un emploi stable comme un CDI ou un poste de fonctionnaire, mais qu'ils sont aussi plus susceptibles d'être engagés dans des emplois précaires à durée déterminée. Par ailleurs, l'emploi des parents influence fortement les perspectives des jeunes. En effet, 76% des jeunes dont les deux parents sont en emploi obtiennent un CDI ou un poste de fonctionnaire, contre 69% pour ceux dont les parents ne sont pas en emploi. Cette disparité de 7 points de pourcentage met en évidence l'importance du modèle de stabilité professionnelle des parents. Les jeunes ayant des parents en emploi bénéficient probablement d'un environnement plus stable et de ressources plus abondantes, ce qui peut faciliter leur propre insertion professionnelle. Le soutien matériel et moral des parents en emploi, ainsi que leurs réseaux professionnels, peuvent également permmettre aux jeunes une plus facile obtention d'un emploi stable.
+
+Les données montrent également que la catégorie socioprofessionnelle (CSP) des parents et leur niveau d'études ne semblent pas influencer significativement l'emploi des jeunes. Les jeunes dont les parents sont ouvriers ou employés ont 74% de chances d'obtenir un CDI ou un poste de fonctionnaire, comparé à 76% pour ceux dont les parents appartiennent à d'autres CSP. De même, les jeunes dont les parents sont diplômés du supérieur ont 78% de chances d'obtenir un emploi stable, contre 75% pour ceux dont les parents ne sont pas diplômés. Bien que la CSP des parents puisse parfois influencer le niveau d'études des jeunes, cet effet semble atténué dans notre échantillon. En effet, nous n'étudions que des jeunes issus de l'enseignement supérieur, ce qui peut uniformiser les différences de parcours et réduire l'impact de la CSP et du niveau d'éducation des parents sur l'insertion professionnelle.
+
+
+```{r tab_envfamxcontrat}
+tab_envfamxcontrat <- rbind(
+  df_contrat |> filter(cspp == "Ouvrier ou Employé") |> select(dep_contrat) |> 
+     table() |> prop.table() |> addmargins() |> round(2) * 100,
+  
+  df_contrat |> filter(cspp != "Ouvrier ou Employé") |> select(dep_contrat) |> 
+     table() |> prop.table() |> addmargins() |> round(2) * 100,
+  
+  df_contrat |> filter(cspm == "Ouvrière ou Employère") |> select(dep_contrat) |> 
+     table() |> prop.table() |> addmargins() |> round(2) * 100,
+  
+  df_contrat |> filter(cspm != "Ouvrière ou Employère") |> select(dep_contrat) |> 
+     table() |> prop.table() |> addmargins() |> round(2) * 100,
+  
+  df_contrat |> filter(oripar == 1) |> select(dep_contrat) |> 
+     table() |> prop.table() |> addmargins() |> round(2) * 100,
+  
+  df_contrat |> filter(oripar == 5) |> select(dep_contrat) |> 
+     table() |> prop.table() |> addmargins() |> round(2) * 100,
+  
+  df_contrat |> filter(etupar == 0) |> select(dep_contrat) |> 
+     table() |> prop.table() |> addmargins() |> round(2) * 100,
+  
+  df_contrat |> filter(etupar == 2) |> select(dep_contrat) |> 
+     table() |> prop.table() |> addmargins() |> round(2) * 100,
+  
+  df_contrat |> filter(pere_emplois == "Père en emploi"&mere_emplois == "Mère en emploi") |> select(dep_contrat) |> 
+     table() |> prop.table() |> addmargins() |> round(2) * 100,
+  
+  df_contrat |> filter(pere_emplois != "Père en emploi"&mere_emplois != "Mère en emploi") |> select(dep_contrat) |> 
+     table() |> prop.table() |> addmargins() |> round(2) * 100,
+  
+  table(df_contrat$dep_contrat) |> prop.table() |> addmargins() |> round(2) * 100
+)
+
+rownames(tab_envfamxcontrat) <- c(
+  "Père ouvrier/employé",
+  "Père dans une autre csp",
+  "Mère ouvrière/employère",
+  "Mère dans une autre csp",
+  "2 parents français d'origine",
+  "2 parents d'origine africaine",
+  "2 parents non-diplômés",
+  "2 parents diplômés du supérieur",
+  "2 parents en emploi",
+  "2 parents qui ne sont pas en emploi",
+  "Ensemble"
+)
+
+colnames(tab_envfamxcontrat)[6] <- "Total"
+
+tab_envfamxcontrat |> appli_kable(
+  titre = "L'environnement familiale impacte-t-il l'emploi de l'individu ? (en \\%)",
+  format = "latex",
+  font.size = 10
+) |> 
+  row_spec(11, bold = T) |> 
+  row_spec(c(2,4,6,8,10), hline_after = T) |> 
+  column_spec(7, bold = T, border_left = T) |> 
+  column_spec(1, border_right = T) |> 
+  footnote(
+    general_title = "",
+    general = c(
+      "Source : Céreq : Enquête Génération 2010 à 5 ans",
+      "Lecture : À la date d'interrogation de 2015 :",
+      "- 14% des individus en emploi étaient en emploi à durée déterminée.",
+      "- 16% des individus en emploi dont le père était ouvrier ou employé en 2010 était en emploi à durée déterminée."
+    )
+  )
+```
+
+
+
+#### Impact d'une période de non-emploi sur les types de contrats}
+
+##### Les jeunes marqués par une situation de NEET contractent plus d'emplois précaires
+
+Les jeunes ayant traversé une période de NEET sont plus susceptibles de se retrouver dans des emplois précaires. Le tableau \ref{tab:kabclassexcontrat} met en évidence cette réalité en comparant les types de contrats selon les différentes catégories de jeunes à l'enquête.
+Parmi les NEET de long terme, 33% sont en emploi à durée déterminée au printemps 2015, 12% en intérim et 15% en contrat aidé. Ces chiffres montrent une prédominance des formes d'emploi les plus précaires dans cette catégorie. En revanche, parmi les Non-NEET, seulement 10% ont un emploi à durée déterminée, 2% sont en intérim et 2% en contrat aidé, ce qui indique une bien meilleure stabilité de l'emploi pour ceux qui n'ont pas connu de période de NEET, ces résultats découlent aussi du fait que la plupart des individus non-NEET ont réussi à trouver un emploi stable au cours de la période d'observation et l'ont conservé jusqu'à la date d'interrogation, ce qui souligne l'importance du premier emploi.
+Les jeunes NEET fluctuants, qui alternent entre des périodes de NEET et d'activité, se situent entre ces deux extrêmes. Pour eux, 25% occupent des emplois à durée déterminée, 8% sont en intérim et 10% en contrat aidé. Bien que ces jeunes aient une meilleure situation que les NEET de long terme, ils restent significativement plus exposés aux formes d'emploi précaires comparés aux Non-NEET.
+Les Repreneurs d'études affichent des caractéristiques différentes. Une petite part d'entre eux sont non-salariés (2%), en intérim (3%) ou en contrat aidé (6%). En revanche, une proportion notable (56%) de ces jeunes parviennent à décrocher un CDI ou un poste de fonctionnaire, tandis que 32% sont en emploi à durée déterminée.
+Globalement, les Non-NEET se distinguent par leur forte présence dans les CDI ou postes de fonctionnaire (82%), contre seulement 35% chez les NEET de long terme et 53% chez les NEET fluctuants. De plus, 75% de l'ensemble des jeunes sont en CDI ou fonctionnaires, soulignant l'écart important en termes de stabilité d'emploi entre les jeunes ayant connu une période de NEET et les autres.
+Ces chiffres démontrent que les jeunes marqués par une situation de NEET sont effectivement plus enclins à se retrouver dans des emplois précaires. En effet, plus la classification désigne des individus marqués par de plus longues périodes de non-emploi, plus la proportion d'emplois précaires augmente.
+
+```{r kabclassexcontrat}
+
+tab_contratxclasse <- cbind(
+  cbind(
+    df_contrat |> 
+      select(dep_contrat, classe) |> 
+      table() |> prop.table(margin = 2) |> addmargins(1) |> round(2) * 100,
+    table(df_contrat$dep_contrat) |> prop.table() |> addmargins() |> round(2) * 100
+  )
+)
+
+colnames(tab_contratxclasse)[5] <- "Ensemble"
+rownames(tab_contratxclasse)[6] <- "Total"
+
+tab_contratxclasse |> appli_kable(
+  titre = "Classification des individus en emploi selon leur contrat de travail à la date d'interrogation de 2015 (en\\%)",
+  font.size = 10
+) |> 
+  row_spec(c(0,6), bold = T) |> 
+  row_spec(5, hline_after = T) |> 
+  column_spec(1, bold = T, border_right = T) |> 
+  column_spec(6, bold = T, border_left = T) |> 
+  footnote(
+    general_title = "",
+    general = c(
+      "Source : Céreq : Enquête Génération 2010 à 5 ans",
+      "Lecture : À la date d'interrogation de 2015 :",
+      "- 82% des jeunes classifiés Non-NEET sont en CDI ou en poste de fonctionnaire.",
+      "- 14% des jeunes ont un emploi à durée déterminée."
+    )
+  )
+```
+
+
+##### L'importance de l'emplacement de la période
+
+L'emplacement temporel de la période de NEET a un impact notable sur la stabilité des emplois que les jeunes obtiennent ultérieurement. Le tableau \ref{tab:kab_contratxemplacement} révèle des variations dans la qualité des emplois en fonction de la période durant laquelle les jeunes ont connu une situation de NEET prolongée.
+Pour la période de janvier 2011 à décembre 2011, 61% des jeunes ayant passé plus de quatre mois en situation de NEET ont réussi à décrocher un CDI ou un poste de fonctionnaire d'ici 2015. Ce taux élevé suggère que ceux qui ont traversé une longue période de NEET au début de la décennie ont eu plus de succès dans la stabilisation de leur emploi. En revanche, pour la période de janvier 2014 à décembre 2014, seulement 34% des jeunes ayant également passé plus de quatre mois en situation de NEET ont obtenu des emplois stables, tels que des CDI ou des postes de fonctionnaire. Cette diminution indique que les jeunes confrontés à des périodes prolongées de NEET plus récemment rencontrent des obstacles plus importants pour obtenir une stabilité professionnelle.
+En ce qui concerne les emplois précaires, les jeunes ayant passé plus de quatre mois en NEET montrent une proportion plus élevée dans les emplois temporaires et moins stables. Pour la période de janvier 2011 à décembre 2011, 22% des jeunes avec une longue période de NEET sont en emploi à durée déterminée, 5% en intérim, et 5% en contrat aidé. Ces proportions augmentent légèrement pour les périodes suivantes, avec 37% en emploi à durée déterminée, 12% en intérim, et 12% en contrat aidé pour la période de janvier 2014 à décembre 2014. Cette tendance montre que les jeunes ayant connu une période prolongée de NEET en fin de période sont plus susceptibles de se retrouver dans des emplois précaires à la date d'interrogation. Ces résultats mettent en évidence que les jeunes rencontrant des difficultés d'insertion seulement quelques mois après la fin de leurs sont moins vulnérable car la période de non-emploi qu'ils vivent est plutôt transitoire tandis que ceux qui rencontrent ces difficultés quelques années après la fin de leurs études font face à un problème possiblement plus profond. 
+
+```{r nmneet1234}
+count_occurrences <- function(df, columns, value) {
+  rowSums(df[columns] == value, na.rm = TRUE)
+}
+
+calendar_columns <- paste0("mois", 15:26)
+
+df <- df %>%
+  mutate(
+    nmemp_1 = count_occurrences(month_details, calendar_columns, 1),
+    nmcho_1 = count_occurrences(month_details, calendar_columns, 2),
+    nmina_1 = count_occurrences(month_details, calendar_columns, 3),
+    nmfor_1 = count_occurrences(month_details, calendar_columns, 4),
+    nmetu_1 = count_occurrences(month_details, calendar_columns, 5),
+    nmneet_1 = nmcho_1 + nmina_1
+  ) 
+
+calendar_columns <- paste0("mois", 27:38)
+
+df <- df %>%
+  mutate(
+    nmemp_2 = count_occurrences(month_details, calendar_columns, 1),
+    nmcho_2 = count_occurrences(month_details, calendar_columns, 2),
+    nmina_2 = count_occurrences(month_details, calendar_columns, 3),
+    nmfor_2 = count_occurrences(month_details, calendar_columns, 4),
+    nmetu_2 = count_occurrences(month_details, calendar_columns, 5),
+    nmneet_2 = nmcho_2 + nmina_2
+  ) 
+
+calendar_columns <- paste0("mois", 39:50)
+
+df <- df %>%
+  mutate(
+    nmemp_3 = count_occurrences(month_details, calendar_columns, 1),
+    nmcho_3 = count_occurrences(month_details, calendar_columns, 2),
+    nmina_3 = count_occurrences(month_details, calendar_columns, 3),
+    nmfor_3 = count_occurrences(month_details, calendar_columns, 4),
+    nmetu_3 = count_occurrences(month_details, calendar_columns, 5),
+    nmneet_3 = nmcho_3 + nmina_3
+  ) 
+
+calendar_columns <- paste0("mois", 51:62)
+
+df <- df %>%
+  mutate(
+    nmemp_4 = count_occurrences(month_details, calendar_columns, 1),
+    nmcho_4 = count_occurrences(month_details, calendar_columns, 2),
+    nmina_4 = count_occurrences(month_details, calendar_columns, 3),
+    nmfor_4 = count_occurrences(month_details, calendar_columns, 4),
+    nmetu_4 = count_occurrences(month_details, calendar_columns, 5),
+    nmneet_4 = nmcho_4 + nmina_4
+  ) 
+
+
+df <- df |> mutate(classe_nmneet_1 = case_when(
+    nmneet_1 >= 4 ~ "4 mois ou plus",
+    nmneet_1 < 4 ~ "Moins de 4 mois",
+    TRUE ~ NA
+))
+
+df <- df |> mutate(classe_nmneet_2 = case_when(
+    nmneet_2 >= 4 ~ "4 mois ou plus",
+    nmneet_2 < 4 ~ "Moins de 4 mois",
+    TRUE ~ NA
+))
+
+df <- df |> mutate(classe_nmneet_3 = case_when(
+    nmneet_3 >= 4 ~ "4 mois ou plus",
+    nmneet_3 < 4 ~ "Moins de 4 mois",
+    TRUE ~ NA
+))
+
+df <- df |> mutate(classe_nmneet_4 = case_when(
+    nmneet_4 >= 4 ~ "4 mois ou plus",
+    nmneet_4 < 4 ~ "Moins de 4 mois",
+    TRUE ~ NA
+))
+
+
+df_contrat <- df |> filter(dep_contrat != "Autres")
+df_contrat$dep_contrat <- droplevels(df_contrat$dep_contrat)
+rm(count_occurrences, calendar_columns)
+```
+
+```{r kab_contratxemplacement}
+tab_neet_1 <- table(df_contrat$classe_nmneet_1, df_contrat$dep_contrat) |> prop.table(margin = 1) |> addmargins(2) |> round(2) * 100
+
+tab_neet_2 <- table(df_contrat$classe_nmneet_2, df_contrat$dep_contrat) |> prop.table(margin = 1) |> addmargins(2) |> round(2) * 100
+
+tab_neet_3 <- table(df_contrat$classe_nmneet_3, df_contrat$dep_contrat) |> prop.table(margin = 1) |> addmargins(2) |>  round(2) * 100
+
+tab_neet_4 <- table(df_contrat$classe_nmneet_4, df_contrat$dep_contrat) |> prop.table(margin = 1) |> addmargins(2) |> round(2) * 100
+
+tab_contratxemplacement <- rbind(
+  tab_neet_1, 
+  tab_neet_2,
+  tab_neet_3,
+  tab_neet_4,
+  table(df_contrat$dep_contrat) |> prop.table() |> addmargins() |> round(2) * 100
+)
+
+
+colnames(tab_contratxemplacement)[6] <- "Total"
+tab_contratxemplacement <- tab_contratxemplacement[c(1,3,5,7,9), ]
+
+rownames(tab_contratxemplacement) <- c(
+  "Jan 2011 - Dec 2011",
+  "Jan 2012 - Dec 2012",
+  "Jan 2013 - Dec 2013",
+  "Jan 2014 - Dec 2014",
+  "Ensemble"
+  )
+
+tab_contratxemplacement |> 
+  appli_kable(
+    titre = "Emplois de ceux qui ont passé plus de 4 mois en situation de NEET dans au moins 1 des 4 dernières années (en \\%)",
+    font.size = 10
+  ) |> 
+  footnote(
+    general_title = "",
+    general = c(
+      "Source : Cérec : Enquête Génération 2010 à 5 ans",
+      "Lecture : ",
+      "Sur la période allant de janvier 2011 à décembre 2011 :",
+      "- 61% des jeunes ayant passé plus de 4 mois en situation de NEET ont un CDI ou un poste de fonctionnaire à la date d'interrogation de 2015.", 
+      "Sur la période allant de janvier 2014 à décembre 2014 :",
+      "- 34% des jeunes ayant passé plus de 4 mois en situation de NEET ont un CDI ou un poste de fonctionnaire à la date d'interrogation de 2015."
+    ),
+    fixed_small_size = T
+    ) |> 
+  column_spec(1, bold = T, border_right = T) |>
+  column_spec(7, bold = T, border_left = T)
+
+
+```
+
+
+##### Inactivité et chômage : même conséquence ?
+
+Jusqu'à présent, cette étude n'a que très peu dissocié les périodes d'inactivité et les périodes de chômage en désignant des périodes de NEET, or, l'impact d'une longue inactivité sur la situation professionnelle future d'un individu est différent de celui d'une longue période de chômage. Tableau \ref{tab:neetxcontrat}, il apparaît que les périodes de chômage ont tendance à réduire la probabilité de retrouver un emploi en CDI ou de fonctionnaire à mesure que la durée du chômage augmente. Par exemple, après 13 mois ou plus de chômage sur la période s'étalant de janvier 2011 à décembre 2014, 48% des individus obtiennent un CDI, contre 78% après 1 à 3 mois de chômage. En revanche, les périodes d'inactivité semblent avoir un impact moins prononcé sur la réintégration en CDI, avec 55% des individus retrouvant un CDI après plus de 13 mois d'inactivité, comparativement à 62% après une inactivité de 1 à 3 mois.
+Par ailleurs, les individus ayant connu une longue période de chômage sont plus susceptibles de se retrouver avec des emplois à durée déterminée. La proportion d'emplois à durée déterminée augmente avec la durée du chômage, passant de 13% après 1 à 3 mois à 28% après 13 mois ou plus. Pour les périodes d'inactivité, cette proportion est également élevée mais suit une tendance inverse, avec une diminution de 24% à 19% pour les mêmes périodes respectives.
+L'une des explications possibles de cette différence est liée aux systèmes d'indemnisation des chômeurs. Les allocations chômage peuvent inciter les individus à accepter des contrats de courte durée ou précaires afin de prolonger leurs droits à indemnisation et éviter une interruption totale des revenus. Ces contrats précaires permettent aux chômeurs de réinitialiser leurs droits à l'allocation chômage et de maintenir une certaine stabilité financière, même si cela signifie occuper des emplois moins stables et moins rémunérateurs à long terme. En revanche, les individus en période d'inactivité, n'ayant pas accès aux mêmes mécanismes d'indemnisation, pourraient être plus motivés à rechercher des emplois stables dès qu'ils réintègrent le marché du travail, expliquant ainsi la proportion plus élevée de CDI après de longues périodes d'inactivité.
+Ces observations suggèrent que la nature et la durée des interruptions professionnelles influencent distinctement les trajectoires d'emploi futures, avec un effet plus sévère des périodes prolongées de chômage sur la stabilité et la qualité des contrats de travail obtenus par la suite. Les mécanismes d'indemnisation jouent un rôle clé dans cette dynamique, orientant les choix des chômeurs vers des solutions à court terme qui pourraient ne pas être les plus avantageuses sur le long terme.
+
+```{r neetxcontrat}
+df_contrat <- df_contrat |> mutate(classe_nmcho_update = case_when(
+    nmcho_update == 0 ~ "0 mois",
+    nmcho_update %in% 1:3 ~ "1-3 mois",
+    nmcho_update %in% 4:6 ~ "4-6 mois",
+    nmcho_update %in% 7:12 ~ "7-12 mois",
+    nmcho_update >= 13 ~ "13 mois et plus",
+    TRUE ~ NA
+))
+
+df_contrat$classe_nmcho_update <- factor(df_contrat$classe_nmcho_update, levels = c("1-3 mois", "4-6 mois", "7-12 mois", "13 mois et plus"))
+
+
+df_contrat <- df_contrat |> mutate(classe_nmina_update = case_when(
+    nmina_update == 0 ~ "0 mois",
+    nmina_update %in% 1:3 ~ "1-3 mois",
+    nmina_update %in% 4:6 ~ "4-6 mois",
+    nmina_update %in% 7:12 ~ "7-12 mois",
+    nmina_update >= 13 ~ "13 mois et plus",
+    TRUE ~ NA
+))
+df_contrat$classe_nmina_update <- factor(df_contrat$classe_nmina_update, levels = c("1-3 mois", "4-6 mois", "7-12 mois", "13 mois et plus"))
+
+
+
+kab_neetxcontrat <- rbind(
+  df_contrat |> 
+    filter(classe_nmcho_update != "0 mois") |> 
+    select(classe_nmcho_update, dep_contrat) |> 
+    table() |> prop.table(margin = 1) |> round(2) * 100,
+  
+  
+  df_contrat |> 
+    filter(classe_nmina_update != "0 mois") |> 
+    select(classe_nmina_update, dep_contrat) |> 
+    table() |> prop.table(margin = 1) |> round(2) * 100
+) |> appli_kable(
+  titre = "Répartition des individus dans les types de contrats selon leur période de NEET (en \\%)",
+  font.size = 10
+  ) |> 
+  row_spec(0, bold = T) |> 
+  column_spec(1, bold = T, border_right = T) |> 
+  pack_rows("Nombre de mois passés au chômage", 1, 4, hline_after = T) |> 
+  pack_rows("Nombre de mois passés en inactivité", 5, 8, hline_after = T) |>   row_spec(4, hline_after = T) |> 
+  footnote(
+    general_title = "",
+    general = c(
+      "Source : Céreq : Enquête Génération 2010 à 5 ans",
+      "Lecture : Sur la période allant de janvier 2011 à décembre 2014 :",
+      "- 48% des jeunes ayant passé au moins 13 mois au chômage ont un CDI ou un poste de fonctionnaire au printemps 2015",
+      "- 55% des jeunes ayant passé au moins 13 mois en inactivité ont un CDI ou un poste de fonctionnaire au printemps 2015"
+    ) ,
+    fixed_small_size = T
+  )
+```
+
+```{r kabneetxcontrat}
+kab_neetxcontrat
+```
+
+
+## Modèle économétrique
+
+### Quels types de contrat ?
+
+Pour analyser les facteurs influençant la probabilité d'occuper différents types d'emploi, un modèle logit multinomial a été mis en place. Ce modèle permet d'estimer les rapports de chances (odds ratios) pour plusieurs catégories d'emploi en comparaison à une catégorie de référence, ici les emplois à durée déterminée. La variable dépendante concerne le type de contrat de travail obtenu par les individus à la date d'interrogation de 2015. Les différentes catégories d'emploi étudiées sont : les contrats à durée indéterminée ou les contrats d'agent de fonction publique, les contrats de travailleurs non-salariés, les contrats de travail temporaires (intérim), les contrats aidés et les emplois à durée déterminée. 
+
+La construction du modèle inclut plusieurs étapes et variables explicatives :
+
+- Identification des groupes NEET : Nous allons utilisé les quatre groupes déterminés au cours de l'analyse de séquence : Non-NEET, NEET de long terme, NEET fluctuants, et Repreneurs d'études. Ces groupes servent de variables explicatives pour comprendre l'impact des périodes de NEET passées sur les perspectives d'emploi.
+
+- Variables contextuelles :
+
+  - Durée passée en inactivité ou en chômage : Une variable capture si l'individu a passé plus de temps en inactivité ou en chômage durant la période d'observation (janvier 2011 - décembre 2014).
+  - Sexe et situation familiale : Le modèle inclut le sexe de l'individu et s'il a des enfants.
+  - Âge et niveau d'éducation : L'âge en 2010 et le niveau de diplôme (Bac, Bac+2, Bac+3/4, Bac+5/Doctorat) sont inclus pour contrôler l'effet de l'éducation et de l'âge.
+  - Secteur d'études : Le secteur d'études (général, industriel, service) est pris en compte.
+  - Statut professionnel des parents : Le modèle considère l'emploi des parents, leur catégorie professionnelle (ouvriers, cadres, indépendants) et leur niveau d'éducation.
+
+- Conditions de vie et variables additionnelles :
+  - Résidence et mobilité : Le lieu de résidence (zone urbaine sensible ou non) et la possession d'un permis de conduire sont inclus.
+  - Expériences à l'étranger et stages : Le nombre de séjours à l'étranger et d'expériences de stage sont intégrés pour mesurer leur impact sur l'employabilité.
+  - Objectifs professionnels : Les aspirations professionnelles en 2013 (volonté de changer de métier, de quitter la région) sont aussi considérées.
+
+- Interaction des variables : Certaines interactions, comme l'interaction entre le taux de chômage dans la région de résidence et la possession d'un permis de conduire, sont également prises en compte pour capturer les effets de la situation géographique combinés à la mobilité des individus.
+
+En utilisant ce modèle logit multinomial, nous pouvons estimer comment chaque variable explicative influence les chances d'obtenir un type d'emploi spécifique par rapport à un emploi à durée déterminée. Les résultats de cette régression fournissent des rapports de chances permettant de comprendre les facteurs clés qui déterminent l'accès à différents types d'emploi parmi les jeunes sortant du supérieur.
+
+
+```{r reg_contrat, results='hide'}
+df$p01a_13 <- factor(df$p01a_13,
+                     levels = c(
+                       1,3,2
+                     ))
+
+df_contrat <- df_contrat |> 
+  mutate(ina_or_cho = case_when(
+    (nmcho_update >= 9 | nmina_update >= 9) & nmcho_update > nmina_update ~ "Cho",
+    (nmcho_update >= 9 | nmina_update >= 9) & nmcho_update < nmina_update ~ "Ina",
+    TRUE ~ "autre"
+  ))
+
+df_contrat$ina_or_cho <- factor(df_contrat$ina_or_cho, levels = c("Cho", "Ina", "autre"))
+
+df_contrat <- df_contrat |> mutate(classe_age = case_when(
+  age10 < 20 ~ "1",
+  age10 < 23 ~ "2",
+  age10 < 25 ~ "3",
+  TRUE ~ NA
+))
+
+df_contrat$classe_nmneet_4 <- factor(
+  df_contrat$classe_nmneet_4,
+  levels = c("Moins de 4 mois", "4 mois ou plus")
+)
+
+df_contrat$dep_contrat <- factor(
+  df_contrat$dep_contrat,
+  levels = c(
+    "Emploi à durée déterminée",
+    "CDI, Fonctionnaire",
+    "Non salarié",
+    "Intérim",
+    "Contrat aidé"
+  )
+  )
+
+reg_contrat <- multinom(
+  dep_contrat~
+    classe +
+    ina_or_cho +
+    #classe_nmneet_4 +
+    sexe*enfant +
+    classe_age +
+    phd_reduced +
+    secteur_etude +
+    pere_emplois +
+    cspp +
+    etup +
+    mere_emplois +
+    cspm +
+    etum +
+    etupar +
+    oripar +
+    pbsante +
+    chom_contrat*per1 + 
+    zus +
+    habde_15 + 
+    voyage +
+    nbstagexcfa +
+    p01a_13 + 
+    p03c_13 + 
+    p03d_13 
+    , 
+    maxit = 500,
+  data = df_contrat
+)
+```
+```{r star_reg_contrat, results='asis'}
+reg_contrat |> stargazer(
+  type = "latex",
+  apply.coef = exp,
+  covariate.labels = c(
+    "Non-NEET (Ref.)/NEET de long terme",
+    "NEET fluctuant",
+    "Repreneurs d'études",
+    "A passé plus de temps en inactivité (jan 2011 - dec 2014) (Ref.)/ Chômage",
+    "A passé très peu ou autant de temps dans les deux situations",
+    #"A passé plus de 4 mois en NEET (jan 2014 - dec 2014)",
+    "Femme (Ref.)/Homme",
+    "A au moins un enfant (Ref.)/Aucun",
+    "Âgé de 20 à 23 ans en 2010 (Ref.)/ Moins de 20 ans",
+    "Âgé de 23 à 24 ans en 2010",
+    "Bac+2 / BTS-DUT (Ref.)/Bac / Sans diplôme",
+    "Bac+3/4 / Bac +2/3 Santé social",
+    "Bac+5 / Doctorat",
+    "Secteur d'étude : Industriel (Ref.)/ Général",
+    "Service",
+    "Père n'est pas en emploi (Ref.)/en emploi",
+    "Père Professions intermédiaires (Ref.)/Ouvrier ou employé",
+    "Cadres et professions libérales",
+    "Indépendant",
+    "Status inconnus",
+    "Père possède un Bac (Ref.)/Sans diplôme",
+    "Diplômé du supérieur",
+    "Diplôme inconnu",
+    "Mère n'est pas en emploi (Ref.)/en emploi",
+    "Mère Professions intermédiaires (Ref.)/Ouvrière ou employère",
+    "Cadres et professions libérales",
+    "Indépendante",
+    "Status inconnus",
+    "Mère possède le Bac (Ref.)/Sans diplôme",
+    "Diplômée du supérieur",
+    "Diplôme inconnu",
+    "Au moins 1 parent diplômé du supérieur (Ref.)/Aucun",
+    "2 parents sont diplômés du supérieur",
+    "Origine des parents : 1 français, 1 africain  (Ref.)/ 2 français",
+    "2 parents d'origine africaine",
+    "Autre combinaison d'origine des parents",
+    "A des problèmes de santé (Ref.)/Aucun problème",
+    "Taux de chômage moyen de la région de résidence",
+    "Possède le permis de conduire (Ref.)/Non",
+    "Réside dans une zus (Ref.)/ Non",
+    "Vit en couple (Ref.)/Vit chez ses parents",
+    "Vit seul",
+    "A effectué un seul séjour à l'étranger (Ref.)/Aucun",
+    "Plusieurs séjours",
+    "N'a effectué aucun stage (Ref.)/Formé par apprentissage",
+    "A effectué un ou deux stages",
+    "A effectué trois stages ou plus",
+    "Voulait ménager sa vie hors travail en 2013 (Ref.)/ Trouver un emploi stable",
+    "améliorer sa situation professionnelle",
+    "Ne veut pas quitter la région en 2013 (Ref.)/Veut",
+    "Ne veut pas changer de métier en 2013 (Ref.)/Veut",
+    "Femme avec au moins un enfant",
+    "I(Taux de chômage, permis de conduire)"
+  ),
+  font.size = "scriptsize",
+  no.space = TRUE,
+  t.auto = FALSE,
+  report = "vc*",
+  title = paste("Le modèle logit multinomial déterminant la probabilité d'occuper différents types d'emploi (Groupe de référence : Emploi à durée déterminée ", nrow(df |> filter(dep_contrat == "Emploi à durée déterminée") |> select(dep_contrat)), " individus).", sep = ""),
+  dep.var.caption = "Rapport de chances",
+  dep.var.labels = c(
+    "CDI, Fonctionnaire",
+    "Non salarié",
+    "Intérim",
+    "Contrat aidé"
+  ),
+  column.labels = c(
+    paste("(n = ", nrow(df |> filter(dep_contrat == "CDI, Fonctionnaire") |> select(dep_contrat)), ")", sep = ""),
+    paste("(n = ", nrow(df |> filter(dep_contrat == "Non salarié") |> select(dep_contrat)), ")", sep = ""),
+    paste("(n = ", nrow(df |> filter(dep_contrat == "Intérim") |> select(dep_contrat)), ")", sep = ""),
+    paste("(n = ", nrow(df |> filter(dep_contrat == "Contrat aidé") |> select(dep_contrat)), ")", sep = "")
+  ),
+  omit.stat = "aic",
+  notes.align = "l",
+  notes = c(
+    "****p<0.01",
+    "Source : Céreq : Enquête Génération 2010 à 5 ans",
+    'Lecture : Toutes choses étant égales par ailleurs, les jeunes diplômés d\'un Bac+5 ont environ 2 fois plus de chance',
+    'd\'obtenir un CDI ou un poste de fonctionnaire par rapport à ceux qui ont un bac ou aucun diplôme.'
+  ),
+  notes.label = "",
+  star.cutoffs = c(0.2, 0.1, 0.05, 0.01)
+) 
+```
+
+## Résultats
+
+
+Les résultats du modèle logit multinomial révèlent que plusieurs facteurs influencent la probabilité d'occuper différents types d'emplois par rapport à un emploi à durée déterminée (CDD).
+
+#### Influence des statuts NEET et Non-NEET
+
+En comparaison avec les NEET de long terme, les non-NEET présentent une probabilité significativement plus élevée d'obtenir un CDI ou de devenir fonctionnaire (rapport de chances de 3,490$^{****}$\footnote{les astérisques représentent les niveaux de significativité, ils sont les mêmes que ceux présentés dans le tableau}) ainsi que de devenir non salarié (6,072$^{***}$)\footnote{Les nombres entre parenthèses sont tous des rapport de chances}. Ils ont toutefois une probabilité réduite, bien que non significative, de se retrouver en intérim (0,484). Les NEET fluctuants montrent une probabilité accrue significative à 80 % d'obtenir un CDI (1,617$^{*}$), tandis que les repreneurs d'études sont moins susceptibles de se retrouver en intérim (0,258$^{**}$). Les individus ayant connu de longues périodes de non-emploi rencontrent les plus grandes difficultés à obtenir une stabilité professionnelle, en particulier les repreneurs d'études et les NEET de long terme, qui sont les moins susceptibles d'obtenir un CDI ou un poste de fonctionnaire. Reprendre des études peut toutefois être bénéfique pour éviter des contrats précaires comparé à ceux qui restent inactifs ou au chômage.
+
+#### Impact des périodes d'inactivité et de chômage
+
+Une longue période d'inactivité affecte différemment les chances d'emploi comparé à une longue période de chômage. Ceux ayant passé plus de temps en inactivité entre janvier 2011 et décembre 2014 ont des probabilités significativement plus élevées d'obtenir un CDI (2,437$^{***}$), de devenir non salarié (6,271$^{****}$), de se retrouver en intérim (4,102$^{****}$) et d'occuper un emploi sous contrat aidé (1,997$^{*}$). Ces résultats suggèrent que les personnes inactives sont plus enclines à chercher un emploi stable ou indépendant, mais aussi à accepter des emplois temporaires ou sous contrat aidé afin de s'insérer dans le monde du travail. À l'inverse, ceux touchés par le chômage semblent plus enclins à accepter des CDD pour prolonger leurs indemnisations, ce qui réduit leurs chances d'obtenir un CDI ou de devenir non salarié.
+
+#### Importance des qualifications éducatives
+
+Les qualifications éducatives jouent un rôle déterminant dans le type d'emploi obtenu. En comparaison avec les titulaire du baccalauréat et non-diplômés, les diplômés du Bac+5 et les doctorants ont environ deux fois plus de chances d'obtenir un CDI ou un poste de fonctionnaire (2,182$^{****}$) et ont une probabilité réduite de se retrouver sous contrat aidé. Les diplômés Bac+3/4 ont plus de chances d'obtenir un CDI (1,716) et moins de chances d'occuper un emploi sous contrat aidé (0,376$^{***}$). Les titulaires de Bac+2 ou BTS-DUT ont également plus de chances d'obtenir un CDI (2,023$^{****}$). Ces résultats montrent que des qualifications plus élevées augmentent les chances d'obtenir des emplois stables tout en réduisant les chances d'occuper des emplois précaires.
+
+#### Expérience professionnelle acquise durant les études
+
+L'expérience professionnelle acquise durant les études influence également la nature de l'emploi occupé. Les jeunes sans stage ont moins de chances d'obtenir un CDI ou un poste de fonctionnaire (0,406$^{****}$), de devenir non salarié (0,374$^{***}$), et de se retrouver sous contrat aidé (0,368$^{**}$) par rapport à ceux formés par apprentissage. Ceux ayant effectué un ou deux stages montrent également des chances réduites d'obtenir un CDI (0,396$^{****}$), de devenir non salarié (0,382$^{****}$), et de se retrouver sous contrat aidé (0,354$^{***}$) par rapport aux apprentis. Les individus ayant effectué trois stages ou plus ont aussi des chances réduites d'obtenir un CDI (0,607$^{***}$) et de devenir non salarié (0,606$^{*}$), bien que les différences pour les postes intérimaires et les contrats aidés ne soient pas significatives. Ces résultats indiquent que l'apprentissage offre de meilleures opportunités d'emploi stables et indépendants par rapport aux stages bien qu'effectuer de nombreux stages permet d'atténuer cet effet.
+
+#### Autres facteurs influençant les probabilités d'obtention de chaque type de contrat
+
+Les individus ayant étudié dans un secteur industriel ont 43,3 % plus de chances d'obtenir un CDI ou un poste de fonctionnaire par rapport à ceux ayant étudié dans un secteur général. Ceux qui souhaitaient quitter leur région de résidence au printemps 2013 avaient 22,6 % moins de chances d'obtenir un CDI ou un poste de fonctionnaire que ceux qui préféraient rester.
+
+Les individus dont le père est indépendant sont nettement plus susceptibles de devenir non salariés par rapport à ceux dont le père est ouvrier ou employé. En revanche, ceux dont la mère exerce dans des professions intermédiaires ont beaucoup moins de chances de devenir non salariés par rapport à ceux dont la mère est ouvrière ou employée. Les personnes ayant effectué plusieurs séjours à l'étranger sont beaucoup plus susceptibles de devenir non salariés, tandis que ceux souhaitant quitter leur région de résidence en 2013 et ceux voulant changer de métier cette année-là sont moins susceptibles de le devenir.
+
+Les individus ayant étudié dans le secteur industriel ont plus de chances d'obtenir un emploi en intérim par rapport à ceux ayant suivi des études dans un secteur général. Le niveau d'étude des parents influence également cette probabilité : ceux dont le père possède un Bac ou un diplôme supérieur ont plus de chances de se retrouver en intérim, tandis que les jeunes dont la mère possède le Bac ou un diplôme supérieur ont des probabilités réduites d'occuper un emploi en intérim.
+
+Les jeunes âgés de 23 à 24 ans en 2010 sont moins susceptibles de se retrouver sous contrat aidé par rapport aux jeunes de moins de 20 ans. Les secteurs d'étude jouent également un rôle : les jeunes ayant suivi des études dans les secteurs industriel ou de service ont moins de chances d'être sous contrat aidé comparé à ceux ayant étudié dans un secteur général. La profession de la mère est également déterminante : les jeunes dont la mère travaille dans des professions intermédiaires sont plus susceptibles de se retrouver sous contrat aidé. Ceux ayant deux parents diplômés du supérieur sont moins susceptibles d'occuper un emploi sous contrat aidé par rapport à ceux dont aucun parent n'est diplômé. Les jeunes ayant effectué plusieurs séjours à l'étranger ont une probabilité fortement réduite de se retrouver sous contrat aidé, tandis que ceux vivant en couple plutôt que chez leurs parents montrent également une probabilité réduite. Enfin, ceux qui souhaitaient quitter leur région de résidence en 2013 sont plus susceptibles de se retrouver sous contrat aidé que sous un emploi à durée déterminée.
+
+## Conclusion et Discussion des résultats
+
+Les résultats de cette étude apportent un éclairage sur les dynamiques complexes qui régissent l'intégration professionnelle des jeunes, particulièrement ceux en situation de NEET. L'analyse des données de la Génération 2010 permet de mieux comprendre comment divers facteurs influencent les types de contrats de travail obtenus par ces jeunes après une période de chômage ou d'inactivité. Il apparaît clairement que le statut de NEET a des répercussions significatives sur les opportunités d'emploi, illustrant l'effet cicatrice évoqué par l'OCDE, où les périodes de chômage et d'inactivité peuvent avoir des effets durables sur les perspectives de carrière des jeunes. Les jeunes peu affectés par ces périodes ont moins de difficulté à obtenir des emplois stables tels que des CDI ou des postes de fonctionnaire, ainsi qu'à devenir indépendants. En revanche, les NEET, particulièrement ceux ayant connu de longues périodes de non-emploi, éprouvent plus de difficultés à accéder à ces types de contrats stables. Toutefois, les NEET fluctuants montrent une certaine résilience avec une probabilité accrue d'obtenir un CDI, cependant, cela peut s'expliquer par le fait que cette catégorie regroupe des individus très différents\footnote{Les NEET fluctuants représentent un groupe hétérogène composé de jeunes ayant des parcours variés au cours de la période d'observation. Ce groupe inclut des individus qui ont vécu des périodes de NEET au début, à la fin, ou de manière intermittente, alternant entre périodes d'emploi et de non-emploi. Cette diversité au sein du groupe des NEET fluctuants peut influencer de manière significative les résultats et les conclusions concernant leur intégration professionnelle, car leurs expériences de chômage et d'inactivité sont très différentes les unes des autres.}.
+
+L'impact des périodes d'inactivité par rapport à celles de chômage se distingue également de manière notable. Ceux ayant passé plus de temps en inactivité montrent une plus grande propension à chercher des emplois stables ou indépendants, mais aussi à accepter des emplois précaires, contrairement à ceux ayant été principalement au chômage, qui semblent plus enclins à accepter des CDD pour prolonger leurs indemnisations. Les qualifications éducatives se révèlent être un déterminant majeur dans l'obtention d'emplois stables. Les diplômes de niveau supérieur (Bac+3 et au-delà) augmentent significativement les chances d'obtenir un CDI ou un poste de fonctionnaire, tout en réduisant les probabilités d'occuper des emplois précaires sous contrat aidé. De plus, l'expérience professionnelle acquise durant les études, notamment à travers l'apprentissage, est tout aussi importante que le niveau d'études. Les jeunes ayant suivi des formations par apprentissage ont des chances accrues d'obtenir des emplois stables et indépendants par rapport à ceux n'ayant effectué que des stages, même si la réalisation de plusieurs stages peut atténuer cet effet négatif. Les facteurs sociaux et contextuels complètent cette analyse en soulignant l'importance du milieu familial et des aspirations géographiques. Les jeunes ayant étudié dans des secteurs industriels ou ceux ayant des parents diplômés montrent des tendances spécifiques quant à leurs probabilités d'occuper différents types d'emplois. Les souhaits de mobilité géographique et les expériences internationales influencent également ces trajectoires professionnelles, tant positivement que négativement, selon les types de contrats. Cette étude met en lumière les différentes facettes de l'intégration professionnelle des jeunes en situation de NEET et les divers facteurs qui les influencent. Elle souligne l'importance de politiques ciblées pour améliorer l'accès à des emplois stables et de qualité pour cette population vulnérable. L'accent doit être mis sur le soutien éducatif, l'expérience professionnelle durant les études et l'accompagnement des jeunes dans leurs choix de mobilité et de carrière pour favoriser une insertion professionnelle durable.
+
+Les résultats présentés dans cette étude se concentrent sur une catégorie particulière de la population, à savoir les jeunes de 15 à 24 ans sortant de l'enseignement supérieur. Il est important de noter que les conclusions pourraient être très différentes si l'étude incluait des jeunes issus de tous types de formations. De plus, l'endogénéité du modèle économétrique ne doit pas être négligée, car plusieurs variables n'ont pas été prises en compte en raison du manque d'informations disponibles, telles que l'hétérogénéité des individus, les politiques régionales favorisant ou non l'insertion professionnelle des jeunes, les réseaux de l'individu, etc. En outre, l'échantillon utilisé dans cette étude est déséquilibré, avec une surreprésentation des contrats à durée indéterminée (CDI) et des fonctionnaires par rapport aux autres types de contrats, et reste globalement relativement faible pour ce type de recherche. Les jeunes sans contrat à la date de l'enquête de 2015 n'ont pas été retenus, ce qui introduit un biais de sélection, car ces jeunes en situation de chômage ou d'inactivité peuvent avoir des expériences très différentes qui ne sont pas représentées dans l'échantillon. De plus, certaines catégories d'emploi, notamment les contrats à durée déterminée et les contrats aidés, englobent diverses situations, et ne pas les subdiviser masque des différences importantes. Il pourrait être pertinent d'analyser ces catégories en les subdivisant davantage. Enfin, l'étude porte sur la situation des jeunes sortis d'études en 2010, soit il y a 14 ans, et les réalités du marché du travail ont évolué depuis cette période, ce qui pourrait influencer les résultats. 
+
+## Bibliographie
+
+
+- Ben Halima M.  Durée d'Emploi et Contrats de Travail Application micro-économétrique sur l'enquête TDE-MLT, Revue d'économie politique , janvier-février 2009, Vol. 119, No. 1 (janvier-février 2009), pp. 143-164, Editions Dalloz https://www.cairn.info/revue-d-economie-politique-2009-1-page-143.htm&wt.src=pdf
+
+- Bonnard Claire, Giret Jean-François, Kossi Yann. Risque d’exclusion sociale et ressources des jeunes NEET / Risk of Social Exclusion and Resources of Young NEET. In: Economie et Statistique / Economics and Statistics, n°514-516, 2020. Numéro spécial : Jeunes et transitions vers l'âge adulte. pp. 133-155.  https://www.persee.fr/doc/estat_0336-1454_2020_num_514_1_10930
+
+- Carcillo, S. et al. (2015), “NEET Youth in the Aftermath of the Crisis: Challenges and Policies”, OECD Social, Employment and Migration Working Papers, No. 164, OECD Publishing. http://dx.doi.org/10.1787/5js6363503f6-en
+
+- Chusseau N. 2023. “Mettre Un Terme Au Phénomène Des NEET.” In Amorcer Les Rebonds. Le Cercle des Économistes. https://lecercledeseconomistes.fr/formats/publications/amorcer-les-rebonds/
+
+- Coppoletta R., Solard J. et. 2014. In. ÉCONOMIE ET STATISTIQUE. 
+https://www.persee.fr/doc/estat_0336-1454_2014_num_469_1_10424
+
+- Couronné J., Sarfati F. 2018. “Une Jeunesse (in)visible : Les « NEET Vulnérables » de La Garantie Jeunes.” In Travail Et Emploi n°153, Pages 41 à 66. Dares. https://www.cairn.info/revue-travail-et-emploi-2018-1-page-41.htm&wt.src=pdf
+
+- Danner M., Joseph O., Guégnard. 2020. “Les Jeunes NEET : Résistances Et Évolutions Sur Vingt Ans.” In FORMATION EMPLOI, CÉREQ, 61–85. 149. CÉREQ. https://www.cairn.info/revue-formation-emploi-2020-1-page-61.htm&wt.src=pdf
+
+- Danner M., Guégnard C., Joseph O. Alice au Pays des NEET : la traversée du miroir sur 20 ans. Jeunesse(s) et transitions vers l'âge adulte : quelles permanences, quelles évolutions depuis 30 ans ?, CEREQ (Centre d'études et de recherches sur les qualifications), Jun 2018, Marseille, France. pp.113-126. ⟨halshs-01813232⟩ https://shs.hal.science/halshs-01813232
+
+-  Danner M., Guégnard C., Joseph O., « Le profil des NEET a-t-il évolué en 20 ans ? », Céreq Essentiels, 2018/1 (N° 1), p. 63-69. URL : https://www.cairn.info/revue-cereq-essentiels-2018-1-page-63.htm 
+
+- Eurofound. (2012). NEET. Young people not in employment, education or training: Characteristics, costs and policy responses in Europe. Publications Office of the European Union.
+https://www.eurofound.europa.eu/sites/default/files/ef_files/pubdocs/2012/54/en/1/EF1254EN.pdf
+
+- Francou Q., INJEP. 2020 Les « NEET », des ressources et des conditions de vie hétérogènes  Collection INJEP Analyses & synthèses N°31 https://injep.fr/publication/les-neet-des-ressources-et-des-conditions-de-vie-heterogenes/
+
+- Gallant N., Eugenia Longo M. et. 2016. In. Observatoire jeunes et société. https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=http://www.erta.ca/sites/default/files/2017-06/bourdon-belisle-jeunes-sans-emploi_2016.pdf&ved=2ahUKEwiJ-42Ii6yHAxUMV6QEHVzUCMoQFnoECBMQAQ&usg=AOvVaw1Lo3XdZbLGpcwiNI16e7s7
+
+- Gatugu J. et Manço A., «!«!NEET!» issus de l’immigration : pour une insertion plus nette !», dans Altay Manço et Joseph Gatugu, Insertion des travailleurs migrants. Efficacité des dispositifs, Paris, L’Harmattan, 2018, p. 123-142. https://www.researchgate.net/publication/329894915_NEET_issus_de_l%27immigration_pour_une_insertion_plus_nette
+
+- Giret J., Guégnard C., Joseph O. School-to-work transition in France: the role of education in escaping long-term NEET trajectories. International Journal of Lifelong Education, 2020, 39 (5-6), pp.1-17. 10.1080/02601370.2020.1796835. halshs-02931035 https://shs.hal.science/halshs-02931035
+
+- Guégnard C., Giret J., Joseph O., Murdoch J. Les situations de NEET dans les parcours d'insertion des jeunes en France. Julien Calmand; Thomas Couppié; Valentine Henrard. Rendement éducatif, parcours et inégalités dans l'insertion des jeunes. Recueil d'études sur la Génération 2010, 5, CEREQ, pp.225-246, 2017, 978-2-11-138832-1. ⟨halshs-01533225 ⟩https://shs.hal.science/halshs-01533225
+
+- Handschin P., Pomini V., Rochat M. 2020. “Pertinence d’un Dépistage Bref Des Troubles de La Personnalité Dans Des Programmes d’aide à l’insertion Professionnelle de Jeunes Adultes.” In. OSP : Orientation scolaire et professionnelle, VOL 49 | n°4, page 675-705. https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://journals.openedition.org/osp/13486%3Flang%3Dfr&ved=2ahUKEwi1tvqXi6yHAxXuVqQEHUYAC7EQFnoECBcQAQ&usg=AOvVaw3aSxh1LcO16t6WridRiK21
+
+- Maguire S. 2015 Young people not in education, employment or training (NEET): Recent policy initiatives in England and their effects Research in Comparative & International Education 2015, Vol. 10(4) 525–536 https://journals.sagepub.com/doi/full/10.1177/1745499915612186
+
+- Redor D. Le chômage des jeunes face à la Covid-19. 2020. hal-03125713. https://hal.science/hal-03125713
+
+- Reist C. 2020. “Les Jeunes Ni En Études, Ni En Emploi, Ni En Formation (NEET) : Quels Profils Et Quels Parcours ?” DARES ANALYSES, no. 006 (February). https://pmb.cereq.fr/index.php?lvl=notice_display&id=66681
+
+
+## Annexe
+
+
+### Quels groupes d'appartenance ?
+
+```{r reg_classe, results='hide'}
+reg_classe <- multinom(
+  classe ~ 
+    sexe*enfant +
+    phd_reduced +
+    secteur_etude + 
+    pere_emplois +
+    cspp + 
+    etup + 
+    mere_emplois +
+    cspm + 
+    etum + 
+    lassitude +
+    raifinan +
+    trouvemp +
+    atnivo +
+    refuse +
+    vieact +
+    proxim +
+    nbfratrie + 
+    zus +
+    pbsante + # ! échantillon
+    oripar + # ! échantillon
+    chom_habitat +
+    nbstagexcfa +
+    voyage +
+    etupar
+    ,
+  na.action = na.exclude,
+  data = df,
+  maxit = 500
+  )
+```
+
+```{r starreg_classe, results='asis'}
+reg_classe |> stargazer(
+  type = "latex",
+  apply.coef = exp,
+  covariate.labels = c(
+    "Femme (Ref.)/Homme",
+    "A au moins un enfant(Ref.)/ Aucun",
+    "Bac+2 / BTS-DUT (Ref.)/Bac / Sans diplôme",
+    "Bac+3/4 / Bac +2/3 Santé social",
+    "Bac+5 / Doctorat",
+    "Secteur d'étude : Industriel (Ref.)/ Général",
+    "Service",
+    "Père n'est pas en emploi (Ref.)/en emploi",
+    "Père Professions intermédiaires (Ref.)/Ouvrier ou employé",
+    "Cadres et professions libérales",
+    "Indépendant",
+    "Status inconnus",
+    "Père possède un Bac (Ref.)/Sans diplôme",
+    "Diplômé du supérieur",
+    "Diplôme inconnu",
+    "Mère n'est pas en emploi (Ref.)/en emploi",
+    "Mère Professions intermédiaires (Ref.)/Ouvrière ou employère",
+    "Cadres et professions libérales",
+    "Indépendante",
+    "Status inconnus",
+    "Mère possède le Bac (Ref.)/Sans diplôme",
+    "Diplômée du supérieur",
+    "Diplôme inconnu",
+    "A arrêté les étude par lassitude (Ref.)/Non",
+    "Pour des raisons financières (Ref.)/Non",
+    "Car il avait trouvé un emploi(Ref.)/Non",
+    "Car a atteint le niveau de formation souhaité (Ref.)/Non",
+    "Car a été refusé dans une formation supérieure (Ref.)/Non",
+    "Pour entrer dans la vie active (Ref.)/Non",
+    "Car la formation souhaitée n'était pas à proximité (Ref.)/Non",
+    "1 ou 2 frères et soeurs (Ref.)/Aucun",
+    "Trois ou plus",
+    "Réside dans une zus (Ref.)/ Non",
+    "A des problèmes de santé (Ref.)/Aucun problème",
+    "Origine des parents : 1 français, 1 africain  (Ref.)/ 2 français",
+    "2 parents d'origine africaine",
+    "Autre combinaison d'origine des parents",
+    "Taux de chômage moyen de la région de résidence",
+    "N'a effectué aucun stage (Ref.)/Formé par apprentissage",
+    "A effectué un ou deux stages",
+    "A effectué trois stages ou plus",
+    "A effectué un seul séjour à l'étranger (Ref.)/Aucun",
+    "Plusieurs séjours",
+    "Au moins 1 parent diplômé du supérieur (Ref.)/Aucun",
+    "2 parents sont diplômés du supérieur",
+    "Femme avec au moins un enfant"
+  ),
+  font.size = "scriptsize",
+  no.space = TRUE,
+  t.auto = FALSE,
+  report = "vc*",
+  title = paste("Le modèle logit multinomial déterminant la probabilité d'appartenance à un des groupes de transition entre la fin des études et l'entrée dans le marché du travail (Groupe de référence : NEET de long terme ", nrow(df |> filter(classe == "NEET de long terme") |> select(classe)), " individus).", sep = ""),
+  dep.var.caption = "Rapport de chances",
+  dep.var.labels = c(
+    "Non-NEET",
+    "Neet transitoire",
+    "Neet en fin de période"
+  ),
+  column.labels = c(
+    paste("(n = ", nrow(df |> filter(classe == "Non-NEET") |> select(classe)), ")", sep = ""),
+    paste("(n = ", nrow(df |> filter(classe == "NEET fluctuants") |> select(classe)), ")", sep = ""),
+    paste("(n = ", nrow(df |> filter(classe == "Repreneurs d'études") |> select(classe)), ")", sep = "")
+  ),
+  omit.stat = "aic",
+  notes.align = "l",
+  notes = c(
+    "****p<0.01",
+    "Source : Céreq : Enquête Génération 2010 à 5 ans",
+    'Lecture :',
+    'Toutes choses étant égales par ailleurs, les jeunes sortant du supérieur diplômé d\'un bac+5 ou d\'un doctorat',
+    'ont environ 3 fois plus de chance d\'appartenir au groupe "Non-NEET" par rapport au groupe "NEET de long terme".'
+  ),
+  notes.label = "",
+  star.cutoffs = c(0.2, 0.1, 0.05, 0.01)
+) 
+```
+
+
+
+
+
+
+
+***

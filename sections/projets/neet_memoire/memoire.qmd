@@ -1,0 +1,21 @@
+---
+title: "{{< fa chart-line >}} Les NEET en France : une analyse économétrique"
+title-block-banner: true
+description: "Analyse approfondie des **NEET** en France et de leur relation avec les différents types de **contrats de travail**, à travers une **analyse de séquences** et une **étude économétrique** détaillée effectuée avec {{< fa brands r-project >}} sur les données de l'**Enquête Génération 2010** à 5 ans réalisée par le **Céreq**."
+image: "memoire_files/NEET_pdf_img.png"
+categories: ["R", "Markdown", "Économétrie", "Statistiques"]
+date: "2024-07-31"
+author: "Hugo Cochereau"
+format: 
+    html:
+        css: "../../sections_css/style_projets.css"
+listing: 
+    contents: memoire_files
+    type: grid
+    grid-columns: 3
+    grid-item-border: true
+    categories: true
+---
+
+
+

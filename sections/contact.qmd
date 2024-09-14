@@ -1,0 +1,37 @@
+---
+toc: false
+format:
+    html:
+        css: sections_css/style_contact.css
+backgroundcolor: "#fff8e7"
+about:
+    template: jolla
+    image: "../imgs/moi.jpg"
+    image-shape: round
+    links:
+    - icon: linkedin
+      text: LinkedIn
+      href: https://www.linkedin.com/in/hugo-cochereau-175448207
+      target: _blank
+    - icon: github
+      text: GitHub
+      href: https://github.com/hugocoche
+      target: _blank
+    - icon: envelope
+      text: Email
+      href: mailto:hugo.p-cochereau@outlook.fr
+      target: _blank
+---
+
+
+Bonjour et bienvenue sur ma page de contact ! Je suis ravi que vous souhaitiez entrer en contact avec moi. Que vous ayez des questions, des suggestions, ou que vous souhaitiez simplement discuter, n'hésitez pas à me contacter via l'un des moyens ci-dessous. Je suis toujours ouvert à de nouvelles opportunités et collaborations.
+
+
+
+
+
+
+
+
+
+

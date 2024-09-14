@@ -1,0 +1,20 @@
+---
+title: "{{< fa signal >}} CONNEXIONS PERDUES"
+title-block-banner: true
+description: "Exploration et comparaison de divers modèles de machine learning pour prédire le churn dans le secteur des télécommunications iraniennes. Utilisation de techniques de parallélisme, de visualisation et de manipulation de données avec **doParallel**, **ggplot2**, **dplyr**, et des méthodes de modélisation avancées avec **tidymodels** et **MASS**."
+image: "data_mining_files/connexion_perdu.png"
+categories: ["R", "Markdown", "Statistiques", "Machine Learning"]
+date: "2024-04-15"
+author: "Hugo Cochereau & Gregory Jaillet"
+format: 
+    html:
+        css: "../../sections_css/style_projets.css"
+listing: 
+    contents: data_mining_files
+    type: grid
+    grid-columns: 3
+    grid-item-border: true
+    categories: true
+---
+
+***

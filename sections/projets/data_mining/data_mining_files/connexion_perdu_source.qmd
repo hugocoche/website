@@ -1,0 +1,2416 @@
+---
+title: "{{< fa code >}} Code source"
+title-block-banner: true
+description: "Vous pouvez retrouver le code source de cette étude en format html."
+image: "../../../../imgs/code_img.png"
+date: "2024-04-15"
+author: "Hugo Cochereau & Gregory Jaillet"
+categories: "R"
+---
+
+
+```{css, echo=FALSE}
+.watch-out {
+  background-color: "transparent";
+}
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+	echo = TRUE,
+    eval = FALSE,
+	fig.align = "center",
+	message = FALSE,
+	warning = FALSE,
+	cache = FALSE,
+	class.source = "watch-out"
+)
+```
+
+```{r librairie, }
+library(doParallel)
+library(ggplot2)
+library(dplyr)
+library(kableExtra)
+library(janitor)
+library(tidymodels)
+library(MASS)
+library(ISLR)
+library(discrim)
+library(pROC)
+library(PRROC)
+library(httpgd)
+library(randomForest)
+library(styler)
+library(rlang)
+library(themis)
+library(recipes)
+library(modeldata)
+library(factoextra)
+library(FactoMineR)
+library(vip)
+library(here)
+library(ranger)
+library(kknn)
+library(naivebayes)
+```
+
+```{r theme_gg}
+col_princ <- 	"cornflowerblue"
+col_comp <- "#19FFFF"
+backg <- "white"
+col_titre <- "black"
+col_ligne <- "black"
+palette <- c("#FFFF19", "#19FFFF", "#FF19FF")
+
+mon_theme <- theme(
+    plot.title = element_text(
+        color = col_titre,
+        hjust = 0.5,
+        face = "bold.italic"
+    ),
+    plot.subtitle = element_text(
+        color = col_ligne,
+        hjust = 0.5,
+        face = "bold.italic"
+    ),
+    panel.background = element_rect(fill = NA, color = NA),
+    plot.background = element_rect(fill = NA, color = NA),
+    legend.position = "right",
+    legend.background = element_rect(fill = NA, color = NA),
+    axis.title.x = element_text(
+        color = col_titre,
+        face = "bold.italic", hjust = 0.5
+    ),
+    axis.title.y = element_text(
+        color = col_titre,
+        face = "bold.italic", hjust = 0.5
+    ),
+    axis.text.x = element_text(
+        color = col_titre,
+        face = "italic"
+    ),
+    axis.text.y = element_text(
+        color = col_titre,
+        face = "italic"
+    ),
+    legend.text = element_text(
+        color = col_titre,
+        face = "italic"
+    ),
+    legend.title = element_text(
+        color = col_titre, hjust = 0.5,
+        face = "bold.italic"
+    ),
+    axis.ticks = element_line(color = col_ligne),
+    panel.grid.major = element_line(color = "gray", linetype = "dashed"),
+    panel.grid.minor = element_line(color = "lightgray", linetype = "dotted"),
+    legend.box.background = element_rect(fill = NA, color = NA),
+    legend.key = element_rect(fill = NA)
+)
+
+theme_couleur <- c("darkgoldenrod", "cornflowerblue")
+```
+
+```{r fonction}
+carre_ggplot <- function() {
+  return(list(
+    geom_segment(aes(x = 0, xend = 1, y = 0, yend = 0), color = "black", linewidth = 0.2),
+    geom_segment(aes(x = 1, xend = 1, y = 0, yend = 1), color = "black", linewidth = 0.2),
+    geom_segment(aes(x = 1, xend = 0, y = 1, yend = 1), color = "black", linewidth = 0.2),
+    geom_segment(aes(x = 0, xend = 0, y = 1, yend = 0), color = "black", linewidth = 0.2)
+  ))
+}
+
+
+tableau_html <- function(
+    x,
+    titre = NULL,
+    digit = 4,
+    align = "c",
+    escape = TRUE,
+    format = "html",
+    style_police = "Roboto",
+    col.names = colnames(x),
+    row.names = TRUE,
+    zoom = 1,
+    small = FALSE,
+    ...) {
+  table <- x |>
+    kable(
+      caption = titre,
+      align = align,
+      format = format,
+      digits = digit,
+      escape = escape,
+      col.names = col.names,
+      row.names = row.names,
+      ...
+    )
+
+  if (small) {
+    table <- table |>
+      kable_styling(
+        full_width = FALSE,
+        latex_options = c("hold_position", "scale_down", "longtable")
+      )
+  }
+
+  table <- table |>
+    kable_material(
+      lightable_options = c("striped", "hover"),
+      html_font = style_police,
+      ...
+    )
+
+  return(table)
+}
+
+
+
+Collecte_mesure <- function(mat_conf, mat_conf_train, roc) {
+  precision <- mat_conf[2, 2] / (mat_conf[1, 2] + mat_conf[2, 2])
+
+  specificite <- mat_conf[1, 1] / (mat_conf[1, 1] + mat_conf[1, 2])
+
+  err_esp_1 <- 1 - specificite
+
+  sensibilite <- mat_conf[2, 2] / (mat_conf[2, 2] + mat_conf[2, 1])
+
+  err_esp_2 <- 1 - sensibilite
+
+  score_F1 <- 2 * (precision * sensibilite) / (precision + sensibilite)
+
+  taux_err_test <- (mat_conf[1, 2] + mat_conf[2, 1]) / (mat_conf[1, 1] + mat_conf[1, 2] + mat_conf[2, 1] + mat_conf[2, 2])
+
+  taux_err_train <- (mat_conf_train[1, 2] + mat_conf_train[2, 1]) / (mat_conf_train[1, 1] + mat_conf_train[1, 2] + mat_conf_train[2, 1] + mat_conf_train[2, 2])
+
+  taux_correcte <- (mat_conf[1, 1] + mat_conf[2, 2]) / (mat_conf[1, 1] + mat_conf[1, 2] + mat_conf[2, 1] + mat_conf[2, 2])
+
+  auc <- auc(roc)
+
+  return(rbind(
+    `Précision` = precision,
+    `Spécificité` = specificite,
+    `Taux de faux positifs` = err_esp_1,
+    `Taux de faux négatifs` = err_esp_2,
+    `Sensibilité` = sensibilite,
+    `F-score` = score_F1,
+    `Taux d'erreur en test` = taux_err_test,
+    `Taux d'erreur en entraînement` = taux_err_train,
+    AUC = auc,
+    Accuracy = taux_correcte
+  ))
+}
+
+
+matrice_confusion <- function(fit, titre = NULL){
+  conf_test <- data.frame(
+    Réalité = ech_test$churn,
+    Prédiction = fit$.predictions[[1]]$.pred_class
+  ) |> table() |> addmargins()
+  
+  colnames(conf_test)[3] <- "Total"
+  rownames(conf_test)[3] <- "Total"
+  
+  df_conf_test <- data.frame(
+    " " = c(rep("Réalité", 2)," "),
+    " " = c(0, 1, "Total"),
+    "0" = c(conf_test[1,1],conf_test[2,1],conf_test[3,1]),
+    "1" = c(conf_test[1,2],conf_test[2,2],conf_test[3,2]),
+    Total = c(conf_test[1,3],conf_test[2,3],conf_test[3,3])
+  )
+  
+  colnames(df_conf_test) <- c(" ", " ", 0, 1, "Total")
+  
+  df_conf_test |> 
+    kable(align = "c", caption = titre, format = "markdown") |> 
+    kable_paper(full_width = FALSE) |>
+    column_spec(c(1,2,5), bold = TRUE) |>
+    row_spec(c(0,3), bold = TRUE) |>
+    row_spec(0, color = "brown") |> 
+    column_spec(2, color = "brown") |> 
+    collapse_rows(columns = 1:2,valign = "top") |> 
+    add_header_above(c(" " = 2, "Prédiction" = 2, " " = 1), 
+                     bold = TRUE, 
+                     line = F) 
+  
+}
+
+
+
+Courbe_roc <- function(roc, titre = NULL) {
+  roc |> ggroc(legacy.axes = TRUE, colour = "darkgoldenrod", size = 1) +
+    geom_segment(aes(x = 0, xend = 1, y = 0, yend = 1), color = "red", linetype = "dotted") +
+    labs(title = titre,
+         x = "1 - Spécificité",
+         y = "Sensibilité") +
+    mon_theme
+}
+
+
+
+
+perf_modele <- function(mat_conf_test, mat_conf_train, roc_test, titre = NULL, format = "markdown") {
+  result_test <- Collecte_mesure(mat_conf_test, mat_conf_train, roc_test) |> round(4)
+
+  result_test <- sprintf("%.2f%%", result_test * 100)
+
+tbl <-   tibble(
+    `Précision` = result_test[1],
+    `Spécificité` = result_test[2],
+    `Taux de faux positifis` = result_test[3],
+    `Taux de faux négatifs` = result_test[4],
+    `Sensibilité` = result_test[5],
+    `F-score` = result_test[6],
+    `Taux d'erreur test` = result_test[7],
+    `Taux d'erreur train` = result_test[8],
+    `AUC` = result_test[9],
+    `Accuracy` = result_test[10]
+  ) |>
+    t() 
+
+tbl |> 
+    tableau_html(row.names = TRUE, titre = titre, format = format) |>
+    column_spec(1, bold = TRUE, italic = TRUE) |> 
+    footnote(
+      number = c(
+        "Taux de faux positifs : Proportion de clients prédits en résiliation qui ont renouvelé.",
+        "Taux de faux négatifs : Proportion de clients prédits en renouvellement qui ont résilié."
+           )) |> 
+    column_spec(1, bold = TRUE) |> 
+    column_spec(2, color = ifelse(rownames(tbl) %in% c("AUC", "F-score", "Accuracy"), "green", "black"))
+  }
+
+
+
+
+affichage_transparent <- function(
+    plot = plot,
+    height = height,
+    scale = scale,
+    width = 6) {
+  plot_name <- deparse(substitute(plot))
+  path <- here::here("image", paste0(plot_name, ".png"))
+
+  suppressMessages(
+    ggplot2::ggsave(
+      plot = plot,
+      path = dirname(path),
+      filename = basename(path),
+      bg = "transparent",
+      height = height,
+      scale = scale,
+      dpi = 300,
+      units = "in",
+      width = width
+    )
+  )
+
+  knitr::include_graphics(path)
+}
+```
+
+
+```{r importation}
+df <- read.csv(
+  file = "data_frame/Customer Churn.csv",
+  header = TRUE,
+  sep = ",", stringsAsFactors = TRUE
+)
+
+df <- clean_names(df)
+
+
+df <- df |>
+  mutate(
+    call_failure = as.integer(call_failure),
+    complains = factor(complains),
+    subscription_length = as.integer(subscription_length),
+    charge_amount = factor(charge_amount, ordered = TRUE, levels = c(0:10)),
+    seconds_of_use = as.integer(seconds_of_use),
+    frequency_of_use = as.integer(frequency_of_use),
+    frequency_of_sms = as.integer(frequency_of_sms),
+    distinct_called_numbers = as.integer(distinct_called_numbers),
+    age_group = factor(age_group, ordered = TRUE, levels = c(1:5)),
+    tariff_plan = factor(tariff_plan),
+    status = factor(status),
+    age = as.integer(age),
+    customer_value = as.numeric(customer_value),
+    churn = factor(churn)
+  )
+```
+
+```{r echantillonnage}
+set.seed(123)
+
+df_prep <- df[, -c(12)]
+
+data_split <- initial_split(df_prep, prop = 2 / 3, strata = churn)
+
+ech_train <- training(data_split)
+ech_test <- testing(data_split)
+```
+
+# INTRODUCTION
+
+
+```{r description}
+description <- tibble(
+  `Nom de la variable` = c(
+    "Call_Failure",
+    "Complains",
+    "Subscription_Length",
+    "Charge_Amount",
+    "Seconds_of_Use",
+    "Frequency_of_Use",
+    "Frequency_of_SMS",
+    "Distinct_Called_Numbers",
+    "Age_Group",
+    "Tariff_Plan",
+    "Status",
+    "Age",
+    "Customer_Value"
+  ),
+  Type = c(
+    "integer",
+    "factor",
+    "integer",
+    "factor",
+    "integer",
+    "integer",
+    "integer",
+    "integer",
+    "factor",
+    "factor",
+    "factor",
+    "integer",
+    "numeric"
+  ),
+  Description = c(
+    "Le nombre d'appels restés sans réponse",
+    "Client qui se plaint (1 : oui, 0 : non)",
+    "La durée de l'abonnement (en mois)",
+    "Montant des frais (0:10)",
+    "le temps d'appel du client (en seconde)",
+    "le nombre total d'appel",
+    "le nombre de sms",
+    "Le nombre d'appel distincts",
+    "la tranche d'âge du client",
+    "le tarif choisi (1 : pay as you go, 2 : contractual)",
+    "Le statut du compte (1 : actif, 2 : non-actif)",
+    "L'âge",
+    "La valeur calculée du consommateur pour l'entreprise"
+  )
+) |>
+  group_by(Type) |>
+  arrange(Type)
+
+
+description |> tableau_html(format = "markdown", align = "l") |>
+  column_spec(1, bold = TRUE) |> 
+  row_spec(0, bold = TRUE)
+```
+
+
+
+
+```{r churn_repart}
+tab_churn <- df$churn |>
+  table() |>
+  prop.table() |>
+  round(4)
+
+data_churn <- data.frame(tab_churn) |>
+  rename(
+    Churn = Var1,
+    Proportion = Freq
+  )
+
+
+graph_churn <- data_churn |>
+  ggplot(aes(x = Churn, y = Proportion, fill = Churn)) +
+  geom_col() +
+  geom_text(aes(label = scales::percent(Proportion)),
+    position = position_stack(vjust = 0.5)
+  ) +
+  labs(
+    title = "Fréquences d'apparition",
+    x = "Churn",
+    y = ""
+  ) +
+  mon_theme +
+  scale_fill_manual(values = theme_couleur)
+
+affichage_transparent(graph_churn,
+                      height = 3,
+                      scale = 1,
+                      width = 6)
+```
+
+
+# Analyse descriptive
+
+## Variables quantitatives
+
+### Test t de Student pour échantillons indépendants
+
+
+$$\begin{cases} H_0: \mu_e = \mu_p \\H_1:\mu_e \ne \mu_p \end{cases} | \ \text{Au risque} \ \alpha = 5 \% \ \text{, on a une} \ p_{value}<0.05$$
+
+```{r ttest}
+quant <- which(sapply(df, is.numeric))
+
+ttest_val <- map_dfr(quant, ~ t.test(df[[.x]] ~ df$churn, var.equal = FALSE) |>
+  tidy() |>
+  mutate(Variable = names(df)[.x]))
+
+
+ttest <- data.frame(ttest_val) |>
+  mutate(
+    Variable = factor(Variable, levels = names(df)),
+    estimate = round(estimate, 2),
+    estimate1 = round(estimate1, 2),
+    estimate2 = round(estimate2, 2),
+    p.value = formatC(p.value, format = "e", digits = 2),
+    conf.low = round(conf.low, 2),
+    conf.high = round(conf.high, 2)
+  )
+
+ttest |>
+  dplyr::select(Variable, estimate, estimate1, estimate2, p.value, conf.low, conf.high) |>
+  rename(
+    `Variable` = Variable,
+    `Estimate` = estimate,
+    `µ1` = estimate1,
+    `µ2` = estimate2,
+    `IC inf` = conf.low,
+    `IC sup` = conf.high,
+    `p-value` = p.value
+  ) |>
+  tableau_html(titre = "Résultats des tests de student", format = "markdown", small = TRUE) |> 
+  column_spec(1, bold = TRUE) |> 
+  row_spec(0, bold = TRUE) |> 
+  column_spec(6, color = ifelse(ttest_val[,5] > 0.05, "red", "black"))
+```
+
+
+
+## Variables qualitatives
+
+### Analyse des proportions
+
+
+
+```{r churn_complains}
+quali <- which(sapply(df, is.factor))
+
+churn_complains <- table(df$churn, df$complains) |>
+  as.data.frame.matrix()
+
+churn_complains <- tibble(Churn = factor(rownames(churn_complains)), churn_complains)
+prop_churn_complains <- churn_complains |>
+  pivot_longer(cols = 2:3, names_to = "Complains", values_to = "Effectif")
+
+a <- ggplot(data = prop_churn_complains, aes(x = Complains, y = Effectif, fill = Churn)) +
+  geom_bar(stat = "identity", position = "fill") +
+  mon_theme +
+  labs(
+    title = "Complains",
+    y = "Proporition",
+    x = " "
+  ) +
+  mon_theme +
+  scale_fill_manual(values = theme_couleur)
+```
+
+```{r churn_charge}
+churn_charge <- table(df$churn, df$charge_amount) |>
+  as.data.frame.matrix()
+
+churn_charge <- tibble(Churn = factor(rownames(churn_charge)), churn_charge)
+
+prop_churn_charge <- churn_charge |> pivot_longer(cols = 2:12, names_to = "Charge_amount", values_to = "Effectif")
+
+b <- ggplot(data = prop_churn_charge, aes(x = Charge_amount, y = Effectif, fill = Churn)) +
+  geom_bar(stat = "identity", position = "fill") +
+  mon_theme +
+  labs(
+    title = "Charge amount",
+    y = "Proporition",
+    x = ""
+  ) +
+  scale_fill_manual(values = theme_couleur) +
+  mon_theme
+```
+
+```{r churn_tariff}
+churn_tariff <- table(df$churn, df$tariff_plan) |>
+  as.data.frame.matrix()
+
+churn_tariff <- tibble(Churn = factor(rownames(churn_tariff)), churn_tariff)
+
+prop_churn_tariff <- churn_tariff |> pivot_longer(cols = 2:3, names_to = "Tariff_plan", values_to = "Effectif")
+
+c <- ggplot(data = prop_churn_tariff, aes(x = Tariff_plan, y = Effectif, fill = Churn)) +
+  geom_bar(stat = "identity", position = "fill") +
+  mon_theme +
+  labs(
+    title = "Tariff plan",
+    y = "Proporition",
+    x = " "
+  ) +
+  scale_fill_manual(values = theme_couleur) +
+  mon_theme
+```
+
+```{r churn_status}
+churn_status <- table(df$churn, df$status) |>
+  as.data.frame.matrix()
+
+churn_status <- tibble(Churn = factor(rownames(churn_status)), churn_status)
+
+prop_churn_status <- churn_status |> pivot_longer(cols = 2:3, names_to = "Status", values_to = "Effectif")
+
+d <- ggplot(data = prop_churn_status, aes(x = Status, y = Effectif, fill = Churn)) +
+  geom_bar(stat = "identity", position = "fill") +
+  mon_theme +
+  labs(
+    title = "Status",
+    y = "Proporition",
+    x = ""
+  ) +
+  scale_fill_manual(values = theme_couleur) +
+  mon_theme
+```
+
+```{r churn_age_group}
+churn_age_group <- table(df$churn, df$age_group) |>
+  as.data.frame.matrix()
+
+churn_age_group <- tibble(Churn = factor(rownames(churn_age_group)), churn_age_group)
+
+prop_churn_age_group <- churn_age_group |> pivot_longer(cols = 2:6, names_to = "Age_Group", values_to = "Effectif")
+
+e <- ggplot(data = prop_churn_age_group, aes(x = Age_Group, y = Effectif, fill = Churn)) +
+  coord_flip() +
+  geom_bar(stat = "identity", position = "fill") +
+  mon_theme +
+  labs(
+    title = "Age Group",
+    y = "Proporition",
+    x = ""
+  ) +
+  scale_fill_manual(values = theme_couleur) +
+  mon_theme
+```
+
+```{r fig_empile}
+quali_prop_graph <- ggpubr::ggarrange(a, b, c, d, ncol = 2, nrow = 2)
+quali_prop_graph2 <- ggpubr::ggarrange(e, ncol = 1)
+
+affichage_transparent(quali_prop_graph,
+                      height = 4,
+                      scale = 1,
+                      width = 6)
+affichage_transparent(quali_prop_graph2,
+                      height = 2,
+                      scale = 1,
+                      width = 6)
+```
+
+
+
+### Test du $\chi^2$
+
+```{r mani_quali}
+
+charge_amount_2 <- ifelse(df$charge_amount %in% 3:10, "3-10", 
+                          ifelse(df$charge_amount == 0, 0,
+                          ifelse(df$charge_amount == 1, 1, 2)))
+
+age_group_2 <- ifelse(df$age_group %in% 4:5, "4-5", df$age_group)
+
+```
+
+
+```{r test_chi2}
+chi_complains <- chisq.test(df$complains, df$churn)
+chi_charge <- chisq.test(charge_amount_2, df$churn)
+chi_tariff <- chisq.test(df$tariff_plan, df$churn)
+chi_status <- chisq.test(df$status, df$churn)
+chi_age_group <- chisq.test(age_group_2, df$churn)
+
+tab_chi <- rbind(
+  cbind("t-stat", "p-value"),
+  cbind(formatC(chi_complains$statistic, format = "e", digits = 2), formatC(chi_complains$p.value, format = "e", digits = 2)),
+  cbind(formatC(chi_charge$statistic, format = "e", digits = 2), formatC(chi_charge$p.value, format = "e", digits = 2)),
+  cbind(formatC(chi_tariff$statistic, format = "e", digits = 2), formatC(chi_tariff$p.value, format = "e", digits = 2)),
+  cbind(formatC(chi_status$statistic, format = "e", digits = 2), formatC(chi_status$p.value, format = "e", digits = 2)),
+  cbind(formatC(chi_age_group$statistic, format = "e", digits = 2), formatC(chi_age_group$p.value, format = "e", digits = 2))
+)
+rownames(tab_chi) <- c("Résultats", "Complains", "Charge amount", "Tariff plan", "Status", "Age Group")
+
+tab_chi |>
+  tableau_html(row.names = TRUE, format = "markdown", titre = "Résultats des tests") |> 
+  column_spec(1, bold = TRUE) |> 
+  row_spec(0, bold = TRUE)
+```
+
+
+
+
+# Préparation des données
+
+
+
+## Gestion de la colinéarité
+
+
+
+```{r pca, fig.align='center'}
+quanti <- which(sapply(ech_train, is.numeric))
+quali <- which(sapply(ech_train, is.factor))
+
+res_acp <- PCA(df_prep, graph = FALSE, quali.sup = quali)
+
+graph_pca_var <- fviz_pca_var(res_acp,
+  col.var = "cos2", col.ind = "cos2",
+  gradient.cols = c("white", "red"),
+  repel = TRUE,
+  axes = c(1, 2)
+) +
+  mon_theme +
+  labs(
+    title = "Cercle des corrélations",
+    subtitle = "Axes 1 et 2",
+  ) +
+  mon_theme
+
+affichage_transparent(graph_pca_var, 
+                      height = 4, 
+                      scale = 1,
+                      width = 5)
+```
+
+
+
+## Découpage train/test
+
+
+
+## Optimisation des hyperparamètres
+
+
+
+# Modèles
+
+
+
+## Analyse discriminante linéaire (LDA)
+
+Afin de débuter doucement notre analyse, nous allons effectuer une **LDA**, en effet ce modèle est toujours bon a tester etant donné sa robustesse et sa simplicité de mise en place, de plus il peut arriver que ce modèle nous permette d'obtenir des résultats non-négligeable s'il s'avère que la relation entre les données est majoritairement linéaire. 
+
+### Spécification du modèle et Recette concoctée
+
+```{r lda_spec, echo=TRUE, eval = FALSE, background="transparent"}
+lda_spec <- discrim_linear() |>
+  set_mode("classification") |>
+  set_engine("MASS")
+
+lda_rec <- recipe(churn ~ ., data = ech_train) |>
+  step_center(all_numeric_predictors()) |>
+  step_scale(all_numeric_predictors()) |>
+  step_smotenc(churn, over_ratio = tune(), neighbors = tune()) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_corr(all_numeric_predictors(), threshold = 0.9, method = "spearman")
+```
+
+
+
+### Optimisation des hyperparamètres
+
+```{r lda_best, fig.align='center'}
+load("modele/lda_tune_res.rda")
+load("modele/Lda_fit.rda")
+
+auto_tune_lda <- autoplot(lda_tune_res)
+
+plot_lda <- auto_tune_lda$plot_env$dat
+
+graph_auto_lda <- ggplot() +
+  geom_line(
+    data = plot_lda[
+      plot_lda$.metric == "f_meas"&
+      plot_lda$Threshold == 0.8,], 
+    aes(x = value, y = mean, color = `# Nearest Neighbors` ), 
+    size = 1
+    )  + mon_theme + 
+  labs(y = "F-measure", 
+       x = "Over-ratio", 
+       color = "Nombre de voisins",
+       title = "Optimisation des hyperparamètres : LDA")
+
+affichage_transparent(graph_auto_lda, 
+                      height = 3, 
+                      scale = 1,
+                      width = 6)
+```
+
+
+
+```{r lda_tibble}
+load("modele/lda_fit.rda")
+
+tibble(
+  `Neighbors` = lda_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[3]][["neighbors"]],
+  `Over-ratio` = lda_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[3]][["over_ratio"]],
+  `Seuil de corrélation` = lda_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[5]][["threshold"]]
+) |>
+  tableau_html(titre = "Hyperparamètres retenus", format = "markdown") |> 
+  row_spec(0, bold = TRUE)
+
+```
+
+### Performances du modèle
+
+
+```{r mat_conf_lda}
+lda_mat_conf <- data.frame(
+  Réalité = ech_test$churn,
+  Prédiction = lda_fit$.predictions[[1]]$.pred_class
+) |> table()
+
+matrice_confusion(lda_fit) 
+
+```
+\normalsize
+
+
+
+```{r lda_pred}
+lda_pred <- lda_fit |> collect_predictions()
+roc_lda <- roc(ech_test$churn, lda_pred$.pred_1)
+
+roc_graph_lda <- Courbe_roc(roc_lda) +
+  mon_theme + carre_ggplot()
+
+affichage_transparent(roc_graph_lda, 
+                      height = 2, 
+                      scale = 1,
+                      width = 3.5)
+
+```
+
+
+```{r lda_pred_train, }
+predictions <- predict(
+  lda_fit$.workflow[[1]], 
+  new_data = ech_train, 
+  type = "prob")
+
+predictions$.pred_class <- ifelse(predictions$.pred_1 > 0.5, 1, 0)
+
+lda_mat_conf_train <- data.frame(
+  Réalité = ech_train$churn,
+  Prédiction = predictions$.pred_class
+) |> table()
+
+
+
+# Exemple d'utilisation
+perf_modele(lda_mat_conf,
+            lda_mat_conf_train,
+            roc_lda,
+            format = "markdown",
+            titre = "Performances du modèle : LDA"
+)
+```
+\normalsize
+
+
+
+## Analyse qualitative discriminante (QDA)
+
+### Spécification du modèle et Recette concoctée
+
+
+
+```{r qda_rec, echo=TRUE, eval=FALSE, background="transparent"}
+qda_spec <- discrim_quad() |>
+  set_mode("classification") |>
+  set_engine("MASS")
+
+qda_rec <- ech_train |>
+  recipe(churn ~ ., strata) |>
+  step_center(all_numeric_predictors()) |>
+  step_scale(all_numeric_predictors()) |>
+  step_smotenc(churn, over_ratio = tune(), neighbors = tune()) |>
+  step_dummy(all_nominal_predictors()) |>
+  step_corr(all_numeric_predictors(), threshold = tune(), method = "spearman")  
+```
+
+```{r qda_spec, eval=FALSE}
+
+
+qda_wf <- workflow() %>% add_model(qda_spec) %>% add_recipe(qda_rec)
+
+qda_folds <- vfold_cv(ech_train, v = 10, strata = churn, repeats = 3)
+
+# Création de la grille de recherche
+qda_range_para <- extract_parameter_set_dials(qda_wf) |>
+  update(
+    over_ratio = over_ratio(c(0.3,0.6)),
+    neighbors = neighbors(c(2,7)),
+    threshold = threshold(c(0.3,0.7))
+  )
+
+qda_grid <- grid_regular(
+  qda_range_para,
+  levels = c(over_ratio = 3, neighbors = 3, threshold = 5)
+)
+
+# Recherche des meilleurs paramètres
+n_core <- detectCores(logical = TRUE)
+registerDoParallel(cores = n_core - 1)
+
+
+qda_tune <- tune_grid(
+  object = qda_wf,
+  resamples = qda_folds,
+  grid = qda_grid,
+  metrics = metric_set(
+    roc_auc,
+    accuracy,
+    yardstick::precision,
+    sens,
+    spec,
+    f_meas
+  )
+)
+
+stopImplicitCluster()
+
+save(qda_tune, file = "modele/qda_tune.rda")
+
+# Sélection des meilleurs paramC(tres
+qda_best_fscore <- qda_tune |>
+    select_best("f_meas")
+
+qda_best_auc <- qda_tune |>
+    select_best("auc")
+
+qda_best_acc <- qda_tune |>
+    select_best("accuracy")
+
+# Finalisation du modèle :
+qda_final_wf <- qda_wf  |>
+    finalize_workflow(qda_best_fscore)
+
+qda_fit <- qda_final_wf |> last_fit(split = data_split)
+
+save(qda_fit, file = "modele/qda_fit.rda")
+```
+
+### Optimisation des hyperparamètres
+
+```{r qda_load}
+load("modele/qda_tune.rda")
+load("modele/qda_fit.rda")
+```
+
+
+```{r qda_opti_param, fig.align='center'}
+auto_tune_qda <- autoplot(qda_tune)
+
+plot_qda <- auto_tune_qda$plot_env$dat
+
+graph_auto_qda <- ggplot() +
+  geom_line(
+    data = plot_qda[
+      plot_qda$.metric == "f_meas"&
+      plot_qda$`# Nearest Neighbors` == 2,], 
+    aes(x = value, y = mean, color = Threshold ), 
+    size = 1
+    )  + mon_theme + 
+  labs(y = "F-measure", 
+       x = "Over-ratio", 
+       color = "Seuil de corrélation",
+       title = "Optimisation des hyperparamètres : QDA")
+
+affichage_transparent(graph_auto_qda, 
+                      height = 3, 
+                      scale = 1,
+                      width = 6)
+```
+
+
+
+```{r qda_param}
+
+tibble(
+  `Neighbors` = qda_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[3]][["neighbors"]],
+  `Over-ratio` = qda_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[3]][["over_ratio"]],
+  `Threshold` = qda_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[5]][["threshold"]],
+) |> tableau_html(titre = "Hyperparamètres retenus", format = "markdown") |> 
+  row_spec(0, bold = TRUE)
+```
+
+
+
+### Performances du modèle
+
+
+```{r mat_conf_qda}
+qda_conf_test <- data.frame(
+  Réalité = ech_test$churn,
+  Prédiction = qda_fit$.predictions[[1]]$.pred_class
+) |> table()
+
+matrice_confusion(qda_fit) 
+
+```
+\normalsize
+
+
+```{r qda_pred}
+qda_pred <- qda_fit |> collect_predictions()
+roc_qda <- roc(ech_test$churn, qda_pred$.pred_1)
+
+roc_graph_qda <- Courbe_roc(roc_qda) +
+  mon_theme + carre_ggplot()
+
+affichage_transparent(roc_graph_qda, 
+                      height = 2, 
+                      scale = 1,
+                      width = 3.5)
+
+```
+
+
+```{r qda_perf}
+predictions <- predict(
+  qda_fit$.workflow[[1]], 
+  new_data = ech_train, 
+  type = "prob")
+
+predictions$.pred_class <- ifelse(predictions$.pred_1 > 0.5, 1, 0)
+
+qda_mat_conf_train <- data.frame(
+  Réalité = ech_train$churn,
+  Prédiction = predictions$.pred_class
+) |> table()
+
+perf_modele(qda_conf_test, qda_mat_conf_train, roc_qda, titre = "Performances du modèle : QDA")
+```
+\normalsize
+
+
+
+## Méthode des voisins les plus proches (KNN)
+
+
+
+```{r}
+load("modele/Knn_fit.rda")
+```
+
+### Spécification du modèle et Recette concoctée
+
+```{r knn_spec, echo=TRUE, eval=FALSE}
+knn_spec <- nearest_neighbor() |>
+  set_mode("classification") |>
+  set_engine("kknn") |>
+  set_args(neighbors = tune())
+
+knn_recipe <- recipe(churn ~ ., data = ech_train) |>
+  step_center(all_numeric_predictors()) |>
+  step_scale(all_numeric_predictors()) |>
+  step_smotenc(churn, over_ratio = tune()) 
+```
+
+
+
+### Optimisation des hyperparamètres
+
+```{r fig.align='center'}
+
+load("modele/knn_tune_res.rda")
+
+auto_knn <- autoplot(knn_tune_res)
+
+plot_knn <- auto_knn$plot_env$dat
+
+graph_auto_knn <- ggplot() +
+  geom_line(
+    data = plot_knn[
+      plot_knn$.metric == "f_meas",], 
+    aes(x = value, y = mean, color = `Over-Sampling Ratio` ), 
+    size = 1
+    )  + mon_theme + 
+  labs(y = "F-measure", 
+       x = "Nombre de voisins", 
+       color = "Over-ratio",
+       title = "Optimisation des hyperparamètres : KNN")
+
+affichage_transparent(graph_auto_knn, 
+                      height = 3, 
+                      scale = 1,
+                      width = 6)
+```
+
+```{r knn_parameters}
+tibble(
+  `Nearest Neighbors` = knn_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["neighbors"]][[2]],
+  `Taux de re-échantillonnage` = knn_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[2]][["over_ratio"]],
+  `Nombre de voisins` = knn_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["neighbors"]][[2]],
+) |> tableau_html(titre = NULL, format = "markdown") |> 
+  row_spec(0, bold = TRUE)
+```
+
+
+
+### Performances du modèle
+
+
+```{r mat_conf_knn}
+knn_conf_test <- data.frame(
+  Réalité = ech_test$churn,
+  Prédiction = knn_fit$.predictions[[1]]$.pred_class
+) |> table()
+
+matrice_confusion(knn_fit) 
+
+```
+\normalsize
+  
+
+
+
+```{r knn_pred}
+knn_pred <- knn_fit |> collect_predictions()
+roc_knn <- roc(ech_test$churn, knn_pred$.pred_1)
+
+roc_graph_knn <- Courbe_roc(roc_knn) +
+  mon_theme + carre_ggplot()
+
+affichage_transparent(roc_graph_knn, 
+                      height = 2, 
+                      scale = 1,
+                      width = 3.5)
+
+```
+
+
+```{r knn_perf}
+predictions <- predict(
+  knn_fit$.workflow[[1]], 
+  new_data = ech_train, 
+  type = "prob")
+
+predictions$.pred_class <- ifelse(predictions$.pred_1 > 0.5, 1, 0)
+
+knn_mat_conf_train <- data.frame(
+  Réalité = ech_train$churn,
+  Prédiction = predictions$.pred_class
+) |> table()
+
+perf_modele(knn_conf_test, knn_mat_conf_train, roc_knn, titre = "Performances du modèle : KNN")
+```
+\normalsize
+
+
+
+## Classificateur naif bayésien (Naive Bayes)
+
+
+
+### Spécification du modèle et Recette concoctée
+
+```{r echo=TRUE, eval=FALSE}
+naive_spec <- naive_Bayes(smoothness = tune(), Laplace = 1) %>%
+  set_engine("naivebayes", usepoisson = TRUE) %>%
+  set_mode("classification")
+
+rec_bayes <- recipe(churn ~ ., data = ech_train) |>
+  step_pca(all_numeric_predictors(), num_comp = 9) |>
+  step_smotenc(churn, over_ratio = tune(), neighbors = tune()) |>
+  step_dummy(all_nominal_predictors(), -all_outcomes())
+
+```
+
+```{r Construct_nb, eval=FALSE}
+
+
+naive_workflow <- workflow() %>%
+    add_recipe(rec_bayes) %>%
+    add_model(naive_spec)
+
+naive_para <- extract_parameter_set_dials(naive_workflow) |>
+    update(
+        smoothness = smoothness(c(10, 20)),
+        over_ratio = over_ratio(c(0.3, 0.6)),
+        neighbors = neighbors(c(3, 7))
+    )
+
+naive_grid <- grid_regular(naive_para, levels = c(5,4,5))
+
+data_folds <- vfold_cv(ech_train,v=10, strata = churn, repeats = 3)
+
+n_core<-detectCores(logical=TRUE)
+registerDoParallel(cores = n_core - 1)
+
+naive_tune <- naive_workflow %>%
+    tune_grid(
+        resamples = data_folds ,
+        grid = naive_grid,
+        metrics = metric_set(
+            roc_auc,accuracy, 
+            yardstick::precision, 
+            yardstick::recall, 
+            yardstick::f_meas
+        )
+    )
+
+stopImplicitCluster()
+
+save(naive_tune, file = "naive_tune.rda")
+
+naive_para <- naive_tune |>
+    select_best("f_meas")     
+
+naive_workflow <- naive_workflow |>
+    finalize_workflow(naive_para)
+
+naive_fit_train <- naive_workflow %>% 
+        fit(newdata = ech_train) 
+
+save(naive_fit_train, file = "modele/naive_fit_train.rda")
+
+```
+
+### Optimisation des hyperparamètres
+
+
+
+```{r nb_opti_param, fig.align='center'}
+load("modele/naive_tune.rda")
+load("modele/naive_fit_train.rda")
+
+auto_naive <- autoplot(naive_tune)
+
+auto_f_meas_naive <- auto_naive$plot_env$dat[
+  auto_naive$plot_env$dat$`Over-Sampling Ratio` == 0.3 & 
+  auto_naive$plot_env$dat$`# Nearest Neighbors` == 3 & 
+  auto_naive$plot_env$dat$.metric == "accuracy", ]
+
+graph_auto_naive <- ggplot() +
+  geom_line(
+    data = auto_f_meas_naive, 
+    aes(x = `value`, y = mean), 
+    color = "darkgoldenrod", 
+    size = 2
+  ) +
+  mon_theme +
+  labs(y = "Accuracy", 
+       x = "Smoothness",
+       title = "Optimisation des hyperparamètres : Naive Bayes")
+
+affichage_transparent(graph_auto_naive, 
+                      height = 3, 
+                      scale = 1,
+                      width = 6)
+```
+
+
+```{r}
+
+
+tibble(
+  Smoothness = naive_fit_train[[6]][[1]][["fit"]][["actions"]][["model"]][["spec"]][["args"]][["smoothness"]][[2]],
+  `Over-ratio` = naive_fit_train[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[2]][["over_ratio"]],
+  `Neighbors` = naive_fit_train[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[2]][["neighbors"]]
+) |> 
+  tableau_html(titre = "Hyperparamètres retenus" , format = "markdown")|> 
+  row_spec(0, bold = T)
+```
+
+### Performances du modèles
+
+
+```{r mat_conf_naive}
+naive_conf_test <- data.frame(
+  Réalité = ech_test$churn,
+  Prédiction = naive_fit_train$.predictions[[1]]$.pred_class
+) |> table()
+
+matrice_confusion(naive_fit_train) 
+
+```
+\normalsize
+
+
+```{r naive_pred}
+naive_pred <- naive_fit_train |> collect_predictions()
+roc_naive <- roc(ech_test$churn, naive_pred$.pred_1)
+
+roc_graph_naive <- Courbe_roc(roc_naive) +
+  mon_theme + carre_ggplot()
+
+affichage_transparent(roc_graph_naive, 
+                      height = 2, 
+                      scale = 1,
+                      width = 3.5)
+
+```
+
+
+
+
+```{r naive_perf}
+predictions <- predict(
+  naive_fit_train$.workflow[[1]], 
+  new_data = ech_train, 
+  type = "prob")
+
+predictions$.pred_class <- ifelse(predictions$.pred_1 > 0.5, 1, 0)
+
+naive_mat_conf_train <- data.frame(
+  Réalité = ech_train$churn,
+  Prédiction = predictions$.pred_class
+) |> table()
+
+perf_modele(naive_conf_test, naive_mat_conf_train, roc_naive, titre = "Performances du modèle : Naive Bayes")
+```
+\normalsize
+
+
+
+## Machine à vecteurs à support radial (Radial SVM)
+
+
+
+```{r}
+load("modele/SVM_Radial.rda")
+```
+
+### Spécification du modèle et Recette concoctée
+
+```{r svm_spec, eval=FALSE, echo=TRUE}
+svmr_spec <- svm_rbf(cost = tune(), rbf_sigma = tune()) |>
+  set_mode("classification") |>
+  set_engine("kernlab")
+
+svmr_rec <- recipe(churn ~ ., data = ech_train) |>
+  step_center(all_numeric_predictors()) |>
+  step_scale(all_numeric_predictors()) |>
+  step_smotenc(churn, over_ratio = tune(), neighbors = tune()) |>
+  step_dummy(all_nominal_predictors())  |>
+  step_corr(all_numeric_predictors(), threshold = 0.9, method = "spearman")
+  
+```
+
+
+### Optimisation des hyperparamètres
+
+```{r svm_autoplot, fig.align="center"}
+load("modele/autoplot_svmr.rda")
+
+
+auto_svmr <- autoplot_svmr
+
+auto_f_meas_svmr <- auto_svmr$plot_env$dat[
+  auto_svmr$plot_env$dat$`Over-Sampling Ratio` == 0.7 & 
+  auto_svmr$plot_env$dat$`# Nearest Neighbors` == 7 & 
+  auto_svmr$plot_env$dat$.metric == "f_meas", ]
+
+graph_auto_svmr <- ggplot() +
+  geom_line(
+    data = auto_f_meas_svmr, 
+    aes(x = value, y = mean, color = `Radial Basis Function sigma` ), 
+    size = 2
+  ) +
+  mon_theme +
+  labs(y = "F-measure", 
+       x = "Nearest Neighbors", 
+       color = "Niveau du noyau",
+       title = "Optimisation des hyperparamètres : Radial SVM")
+
+affichage_transparent(graph_auto_svmr, 
+                      height = 3, 
+                      scale = 1,
+                      width = 6)
+```
+
+```{r svm_parameter}
+tibble(
+  `Cout` = svmr_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["cost"]][[2]],
+  `Niveau du Noyau` = round(svmr_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["rbf_sigma"]][[2]], 2),
+  `Taux de re-échantillonnage` = svmr_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[3]][["over_ratio"]],
+  `Nombres de voisins utilisé` = svmr_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[3]][["neighbors"]]
+) |> tableau_html(titre = "Hyperparamètres retenus", format = "markdown") |> 
+  row_spec(0, bold = TRUE)
+```
+
+### Performances du modèle
+
+
+```{r mat_conf_svm}
+svm_conf_test <- data.frame(
+  Réalité = ech_test$churn,
+  Prédiction = svmr_fit$.predictions[[1]]$.pred_class
+) |> table()
+
+matrice_confusion(svmr_fit) 
+```
+\normalsize
+  
+
+
+
+```{r svm_pred}
+svm_pred <- svmr_fit |> collect_predictions()
+roc_svm <- roc(ech_test$churn, svm_pred$.pred_1)
+
+roc_graph_svm <- Courbe_roc(roc_svm) +
+  mon_theme + carre_ggplot()
+
+affichage_transparent(roc_graph_svm, 
+                      height = 2, 
+                      scale = 1,
+                      width = 3.5)
+
+```
+
+
+
+
+```{r svm_perf}
+predictions <- predict(
+  svmr_fit$.workflow[[1]], 
+  new_data = ech_train, 
+  type = "prob")
+
+predictions$.pred_class <- ifelse(predictions$.pred_1 > 0.5, 1, 0)
+
+svm_mat_conf_train <- data.frame(
+  Réalité = ech_train$churn,
+  Prédiction = predictions$.pred_class
+) |> table()
+
+perf_modele(svm_conf_test, svm_mat_conf_train, roc_svm, titre = "Performances du modèle : SVM Radial")
+```
+\normalsize
+
+
+
+## Régression Logistique
+
+
+
+### Spécification du modèle et Recette concoctée
+
+```{r logit_spec, echo=TRUE, eval=FALSE}
+logit_spec <- logistic_reg() |>
+  set_engine("glm") |>
+  set_mode("classification") |>
+  translate()
+
+logit_rec <- recipe(churn ~ ., data = ech_train) |>
+  step_center(all_numeric_predictors()) |>
+  step_scale(all_numeric_predictors()) |>
+  step_smotenc(churn, over_ratio = tune(), neighbors = tune()) |>
+  step_dummy(all_nominal_predictors())  |>
+  step_corr(all_numeric_predictors(), threshold = tune(), method = "spearman") 
+  
+```
+
+
+### Optimisation des hyperparamètres
+
+```{r fig.align='center'}
+load("modele/Logit_fit.rda")
+load("modele/logit_tune_res.rda")
+
+auto_logit <- autoplot(logit_tune_res)
+
+plot_logit <- auto_logit$plot_env$dat
+
+graph_auto_logit <- ggplot() +
+  geom_line(
+    data = plot_logit[
+      plot_logit$.metric == "f_meas"&
+      plot_logit$Threshold == 0.8,], 
+    aes(x = value, y = mean, color = `# Nearest Neighbors` ), 
+    size = 1
+    )  + mon_theme + 
+  labs(y = "F-measure", x = "Over-ratio", color = "Nombre de voisins", title = "Optimisation des hyperparamètres : Régression logistique")
+
+affichage_transparent(graph_auto_logit, 
+                      height = 3, 
+                      scale = 1,
+                      width = 6)
+
+tibble(
+  `Nearest Neighbors` = logit_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[3]][["neighbors"]],
+  `Taux de rééchantillonnage` = logit_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[3]][["over_ratio"]],
+  `Seuil de corrélation` = logit_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[4]][["threshold"]]
+) |> tableau_html(titre = "Hyperparamètres retenus",format = "markdown") |> 
+  row_spec(0, bold = TRUE)
+```
+
+### Coefficients Obtenus
+
+```{r logit_odds}
+coef_logit <- tidy(logit_fit$.workflow[[1]])
+
+coef_sign <- coef_logit[coef_logit$p.value < 0.05,]
+
+odds_ratio <- cbind(
+  coef_sign$term,
+  round(coef_sign$estimate,4),
+  round(exp(coef_sign$estimate),4), 
+  coef_sign$p.value
+)
+
+colnames(odds_ratio) <- c("Variables","Coef","Odds Ratios", "P-value")
+
+odds_ratio |>
+  tableau_html(titre = "Coefficients significatifs",row.names = FALSE,format = "markdown") |> 
+  row_spec(0, bold = TRUE) |> 
+  column_spec(1, bold = TRUE)
+```
+
+
+
+### Performances du modèle
+```{r mat_conf_logit}
+logit_conf_test <- data.frame(
+  Réalité = ech_test$churn,
+  Prédiction = logit_fit$.predictions[[1]]$.pred_class
+) |> table()
+
+matrice_confusion(logit_fit) 
+
+```
+
+
+```{r logit_pred}
+logit_pred <- logit_fit |> collect_predictions()
+roc_logit <- roc(ech_test$churn, logit_pred$.pred_1)
+
+roc_graph_logit <- Courbe_roc(roc_logit) +
+  mon_theme + carre_ggplot()
+
+affichage_transparent(roc_graph_logit, 
+                      height = 2, 
+                      scale = 1,
+                      width = 3.5)
+
+```
+
+
+
+
+```{r logit_perf}
+predictions <- predict(
+  logit_fit$.workflow[[1]], 
+  new_data = ech_train, 
+  type = "prob")
+
+predictions$.pred_class <- ifelse(predictions$.pred_1 > 0.5, 1, 0)
+
+logit_mat_conf_train <- data.frame(
+  Réalité = ech_train$churn,
+  Prédiction = predictions$.pred_class
+) |> table()
+
+perf_modele(logit_conf_test, logit_mat_conf_train, roc_logit, titre = "Performances du modèle : Régression logistique")
+```
+
+
+## Arbre de décision CART
+
+### Spécification du modèle et recette concoctée
+
+```{r dec_spec, echo=TRUE, eval=FALSE}
+dec_tree_spec <- decision_tree(cost_complexity = tune()) %>%
+  set_mode("classification") %>%
+  set_engine("rpart")
+
+data_rec <- ech_train |>
+  recipe(churn ~ ., strata = churn) |>
+  step_center(all_numeric_predictors()) |>
+  step_scale(all_numeric_predictors()) |>
+  step_smotenc(churn, over_ratio = tune(), neighbors = tune()) |>
+  step_corr(all_numeric_predictors(), threshold = 0.9, method = "spearman") 
+```
+
+
+```{r rec_dec_tree, eval=FALSE}
+
+  
+
+dec_tree_wf <- workflow() %>% add_model(dec_tree_spec) %>% add_recipe(data_rec)
+
+
+df_folds <- vfold_cv(ech_train, v = 10, strata = churn, repeats = 3)
+
+# Création de la grille de recherche
+dec_tree_range_para <- extract_parameter_set_dials(dec_tree_wf) |>
+  update(
+    cost_complexity = cost_complexity(range = c(-5, -0.1)),
+    over_ratio = over_ratio(range = c(0.3, 0.7)),
+    neighbors = neighbors(range = c(2, 6))
+  )
+
+dec_tree_grid <- grid_regular(
+  dec_tree_range_para,
+  levels = c(over_ratio = 5, cost_complexity = 10, neighbors = 5)
+)
+
+# Recherche des meilleurs paramètres
+n_core <- detectCores(logical = TRUE)
+registerDoParallel(cores = n_core - 1)
+
+
+dec_tree_tune <- tune_grid(
+  object = dec_tree_wf,
+  resamples = df_folds,
+  grid = dec_tree_grid,
+  metrics = metric_set(
+    roc_auc,
+    accuracy,
+    yardstick::precision,
+    sens,
+    spec,
+    f_meas
+  )
+)
+
+
+
+stopImplicitCluster()
+
+
+
+dec_tree_best_auc <- dec_tree_tune |>
+    select_best("roc_auc")
+
+
+dec_tree_best_acc <- dec_tree_tune |>
+    select_best("accuracy")
+
+
+dec_tree_best_f <- dec_tree_tune |>
+    select_best("f_meas")
+
+
+
+save(dec_tree_tune, file = "C:/Users/hugoc/Desktop/repertoire_R_studio/R/Data_mining/DM_Data_mining/modele/dec_tree_tune.RData")
+
+
+# Finalisation du modèle :
+dec_tree_final_wf <- dec_tree_wf  |>
+    finalize_workflow(dec_tree_best_auc)
+
+
+dec_tree_fit <- dec_tree_final_wf %>% last_fit(split = data_split)
+save(dec_tree_fit, file = "C:/Users/hugoc/Desktop/repertoire_R_studio/R/Data_mining/DM_Data_mining/modele/dec_tree_fit.RData")
+```
+
+### Optimisation des hyperparamètres
+
+L'arbre de décision est un modèle simple et intuitif qui permet de visualiser les règles de décision. Il est robuste aux valeurs aberrantes et il est capable de gérer des variables qualitatives sans encodage particulier. Cependant, il est sensible au sur-apprentissage et à la variance des données. Nous allons donc construire un arbre de décision à **profondeur maximale** tout en optimisant le paramètre de **`coût de complexité`**. Ce paramètre permet de contrôler la croissance de l'arbre en pénalisant les branches supplémentaires, il nous permettra donc de trouver un compromis entre la complexité du modèle et son adéquation aux données d'apprentissage. Nous n'oublierons pas d'optimiser le ratio de suréchantillonnage et le nombre de voisins pour le suréchantillonnage **`SMOTE`**.
+
+```{r dec_tree_opti_param, fig.align='center'}
+load("modele/dec_tree_tune.RData")
+load("modele/dec_tree_fit.RData")
+
+auto_tune_dec_tree <- autoplot(dec_tree_tune)
+
+plot_dec_tree <- auto_tune_dec_tree$plot_env$dat[
+  auto_tune_dec_tree$plot_env$dat$.metric == "accuracy" & 
+  auto_tune_dec_tree$plot_env$dat$`# Nearest Neighbors` == 2, ]
+
+
+graph_auto_dec_tree <- ggplot() +
+  geom_line(data = plot_dec_tree, aes(x = value, y = mean, color = `Over-Sampling Ratio`), size = 1) +
+  mon_theme +
+  labs(y = "Accuracy", 
+       x = "Cost-Complexity Parameter",
+       color = "Over-ratio",
+       title = "Optimisation des hyperparamètres : Decision Tree")
+
+affichage_transparent(graph_auto_dec_tree, 
+                      height = 3, 
+                      scale =1,
+                      width = 6)
+```
+
+Les paramètres retenus permettront de maximiser la précision globale de l'arbre de décision :
+
+```{r dec_tree_param}
+tibble(
+  `Cost-Complexity Parameter` =
+    formatC(quo_get_expr(dec_tree_fit[[6]][[1]][["fit"]][["actions"]][["model"]][["spec"]][["args"]][["cost_complexity"]]), format = "e", digits = 2),
+  `Over-ratio` = dec_tree_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[3]][["over_ratio"]],
+  `Neighbors` = dec_tree_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[3]][["neighbors"]]
+) |>
+  tableau_html(titre = "Hyperparamètres retenus", row.names = FALSE, format = "markdown") |> 
+  row_spec(0, bold = TRUE)
+```
+
+L'arbre de décision possède l'avantage de pouvoir être représenté graphiquement, ce qui permet de visualiser les règles de décision. Nous allons donc afficher l'arbre de décision obtenu :
+
+```{r visu_dec_tree}
+dec_tree_fit |>
+  extract_fit_engine() |>
+  rpart.plot::prp(
+    type = 0, extra = 1,
+    roundint = FALSE
+  )
+```
+
+Il est intéressant de constater que les deux premières variables utilisées pour classer les individus sont **`status`** et **`complain`** qui sont deux des variables qui ont un impact significatif sur la probabilité de résiliation du contrat selon le modèle de régression logistique.
+
+### Performances du modèle}
+
+\begin{figure}[H]
+  \begin{floatrow}
+    \ffigbox[][]{Matrice de confusion : Arbre de décision}{%
+\Large
+```{r mat_conf_dec}
+dec_conf_test <- data.frame(
+  Réalité = ech_test$churn,
+  Prédiction = dec_tree_fit$.predictions[[1]]$.pred_class
+) |> table()
+
+matrice_confusion(dec_tree_fit) 
+
+```
+\normalsize
+  }
+
+  \ffigbox[][5cm]{Courbe ROC : Arbre de décision}{%
+
+```{r dec_pred}
+dec_pred <- dec_tree_fit |> collect_predictions()
+roc_dec <- roc(ech_test$churn, dec_pred$.pred_1)
+
+roc_graph_dec <- Courbe_roc(roc_dec) +
+  mon_theme + carre_ggplot()
+
+affichage_transparent(roc_graph_dec, 
+                      height = 2, 
+                      scale = 1,
+                      width = 3.5)
+
+```
+
+  }
+  \end{floatrow}
+\end{figure}
+
+\newpage
+
+\large
+```{r dec_perf}
+predictions <- predict(
+  dec_tree_fit$.workflow[[1]], 
+  new_data = ech_train, 
+  type = "prob")
+
+predictions$.pred_class <- ifelse(predictions$.pred_1 > 0.5, 1, 0)
+
+dec_mat_conf_train <- data.frame(
+  Réalité = ech_train$churn,
+  Prédiction = predictions$.pred_class
+) |> table()
+
+perf_modele(dec_conf_test, dec_mat_conf_train, roc_dec, titre = "Performances du modèle : Arbre de décision")
+```
+\normalsize
+
+Les performances de l'arbre de décision sont plutôt satisfaisantes et ne sur-apprend que très légèrement, mais on notera tout de même que sa précision est un point faible et qu'il performe globalement moins bien que les **k plus proches voisins**. Nous allons donc essayer d'améliorer ces performances en utilisant plusieurs arbre de décision au travers d'une **forêt aléatoire** puis d'un **boosting**.
+
+\newpage 
+
+## Forêt aléatoire
+
+### Spécification du modèle et recette concoctée
+
+```{r rf_spec, eval=FALSE, echo=TRUE}
+# Spécification du modèle :
+
+rf_spec <- rand_forest(mtry = tune(), trees = tune(), min_n = 1) |>
+  set_engine("ranger", importance = "impurity") |>
+  set_mode("classification")
+
+# Création de la recette
+rec <- recipe(churn ~ ., data = ech_train) |>
+  step_center(all_numeric_predictors()) |>
+  step_scale(all_numeric_predictors()) |>
+  step_smotenc(over_ratio = tune(), skip = TRUE, neighbors = tune()) |>
+  step_corr(all_numeric_predictors(), threshold = 0.9, method = "spearman") 
+```
+
+
+```{r Construct_rf, eval=FALSE}
+
+rf_wf <- workflow() %>%
+  add_recipe(rec) %>%
+  add_model(rf_spec)
+
+df_folds <- vfold_cv(ech_train, v = 10, strata = churn, repeats = 3)
+
+# Création de la grille de recherche
+rf_range_para <- extract_parameter_set_dials(rf_wf) |>
+  update(
+    mtry = mtry(c(4, 10)),
+    trees = trees(c(50, 500)),
+    over_ratio = over_ratio(c(0.3, 0.6)),
+    neighbors = neighbors(c(2, 7))
+  )
+
+rf_grid <- grid_regular(
+  rf_range_para,
+  levels = c(mtry = 7, trees = 10, over_ratio = 4, neighbors = 3)
+)
+
+# Recherche des meilleurs paramètres
+n_core <- detectCores(logical = TRUE)
+registerDoParallel(cores = n_core - 1)
+
+
+rf_tune <- tune_grid(
+  object = rf_wf,
+  resamples = df_folds,
+  grid = rf_grid,
+  metrics = metric_set(
+    roc_auc,
+    accuracy,
+    yardstick::precision,
+    sens,
+    spec,
+    f_meas
+  )
+)
+
+
+stopImplicitCluster()
+
+save(rf_tune, file = "modele/rf_tune.rda")
+
+
+# Sélection des meilleurs paramC(tres
+rf_best_auc <- rf_tune |>
+  select_best("auc")
+  
+rf_best_acc <- rf_tune |>
+  select_best("accuracy")
+
+rf_best_fscore <- rf_tune |>
+  select_best("f_meas")
+
+#Finalisation du modèle :
+rf_final_wf <- rf_wf  |>
+  finalize_workflow(rf_best_auc)
+
+# Entrainement du modèle :
+rf_fit <- rf_final_wf |> last_fit(split = data_split)
+
+save(rf_fit, file = "modele/rf_fit.rda")
+```
+
+### Optimisation des hyperparamètres
+
+
+
+```{r rf_opti_param, fig.align='center'}
+load("modele/rf_tune.rda")
+load("modele/rf_fit.rda")
+
+auto_tune_rf <- autoplot(rf_tune)
+
+
+plot_rf <- auto_tune_rf$plot_env$dat
+
+graph_auto_rf <- ggplot() +
+  geom_line(
+    data = plot_rf[
+      plot_rf$.metric == "accuracy"&
+      plot_rf$`Over-Sampling Ratio`==0.3&
+      plot_rf$`# Nearest Neighbors`==4, ], 
+    aes(x = value, y = mean, color = `# Randomly Selected Predictors`), 
+    size = 1
+    ) +
+  mon_theme +
+  labs(y = "Accuracy", x = "Nombre d'arbres", color = "Mtry", title = "Optimisation des hyperparamètres : Random Forest")
+
+affichage_transparent(graph_auto_rf,
+                      height = 3, 
+                      scale = 1,
+                      width = 6)
+```
+
+
+
+```{r rf_opti_param_2}
+tibble(
+  Mtry = rf_fit$.workflow[[1]]$fit$fit$spec$args$mtry[[2]],
+  `Nombre d'arbres` = rf_fit$.workflow[[1]]$fit$fit$spec$args$trees[[2]],
+  `Min nodesize` = rf_fit$.workflow[[1]]$fit$fit$spec$args$min_n[[2]],
+  `Over-ratio` = rf_fit$.workflow[[1]]$pre$mold$blueprint$recipe$steps[[3]][["over_ratio"]],
+  `Neighbors` = rf_fit$.workflow[[1]]$pre$mold$blueprint$recipe$steps[[3]][["neighbors"]],
+) |> tableau_html(format = "markdown", titre = "Optimisation des hyperparamètres") |> 
+  row_spec(0, bold = T)
+
+```
+
+### Importance des variables
+
+
+
+```{r rf_importance}
+rf_importance <- extract_fit_parsnip(rf_fit$.workflow[[1]]) |>
+  vip(num_feature = 20) +
+  geom_col(fill = "darkgoldenrod") +
+  mon_theme +
+  labs(title = "Importance des variables") +
+  mon_theme
+
+affichage_transparent(rf_importance, 
+                      height = 4, 
+                      scale = 1,
+                      width = 6)
+
+
+
+```
+
+
+
+### Performances du modèles
+
+
+```{r mat_conf_rf}
+rf_conf_test <- data.frame(
+  Réalité = ech_test$churn,
+  Prédiction = rf_fit$.predictions[[1]]$.pred_class
+) |> table()
+
+matrice_confusion(rf_fit) 
+
+```
+\normalsize
+
+
+```{r rf_pred}
+rf_pred <- rf_fit |> collect_predictions()
+roc_rf <- roc(ech_test$churn, rf_pred$.pred_1)
+
+roc_graph_rf <- Courbe_roc(roc_rf) +
+  mon_theme + carre_ggplot()
+
+affichage_transparent(roc_graph_rf, 
+                      height = 2, 
+                      scale = 1,
+                      width = 3.5)
+
+```
+
+
+
+```{r rf_perf}
+predictions <- predict(
+  rf_fit$.workflow[[1]], 
+  new_data = ech_train, 
+  type = "prob")
+
+predictions$.pred_class <- ifelse(predictions$.pred_1 > 0.5, 1, 0)
+
+rf_mat_conf_train <- data.frame(
+  Réalité = ech_train$churn,
+  Prédiction = predictions$.pred_class
+) |> table()
+
+
+
+rf_result_test <- Collecte_mesure(rf_conf_test, rf_mat_conf_train, roc_rf) |> round(4)
+
+rf_result_test <- sprintf("%.2f%%", rf_result_test * 100)
+
+rf_tbl <- tibble(
+  `Précision` = rf_result_test[1],
+  `Spécificité` = rf_result_test[2],
+  `Taux de faux positifis` = rf_result_test[3],
+  `Taux de faux négatifs` = rf_result_test[4],
+  `Sensibilité` = rf_result_test[5],
+  `F-score` = rf_result_test[6],
+  `Erreurs OOB` =sprintf(
+    "%.2f%%", 
+    round(rf_fit$.workflow[[1]][["fit"]][["fit"]][["fit"]][["prediction.error"]],4) * 100),
+  `Taux d'erreur en test` = rf_result_test[7],
+  `Taux d'erreur en entraînement` = rf_result_test[8],
+  `AUC` = rf_result_test[9],
+  `Accuracy` = rf_result_test[10]
+) |>
+  t() 
+
+rf_tbl |>
+  tableau_html(
+    row.names = TRUE, 
+    titre = "Performances du modèle : Random Forest", 
+    format = "markdown"
+  ) |>
+  column_spec(1, bold = TRUE, italic = TRUE)|> 
+    footnote(
+      number = c(
+        "Taux de faux positifs : Proportion de clients prédits en résiliation qui ont renouvelé.",
+        "Taux de faux négatifs : Proportion de clients prédits en renouvellement qui ont résilié."
+           )) |> 
+  column_spec(2, color = ifelse(rownames(rf_tbl) %in% c("AUC", "F-score", "Accuracy"), "green", "black"))
+
+
+```
+\normalsize
+
+
+
+## Boosting
+
+
+### Spécification du modèle et Recette concoctée
+<!-- \vspace{-3cm} -->
+```{r boost_spec, echo=TRUE, eval = FALSE}
+boost_spec <- boost_tree(
+  trees = tune(),
+  tree_depth = tune(),
+  learn_rate = tune(),
+  mtry = tune()
+) |>
+  set_engine("xgboost") |>
+  set_mode("classification")
+
+boost_rec <- recipe(churn ~ ., data = ech_train) |>
+  step_center(all_numeric_predictors()) |>
+  step_scale(all_numeric_predictors()) |>
+  step_smotenc(churn, over_ratio = tune(), neighbors = tune()) |>
+  step_dummy(all_nominal_predictors())
+```
+<!-- \vspace{-5cm} -->
+
+
+```{r grille_boosting ,eval = FALSE, echo = FALSE}
+data_folds <- vfold_cv(ech_train, v = 10, strata = churn, repeats = 3)
+
+boosting_param <- extract_parameter_set_dials(boosting_workflow) |>
+  update(
+    trees = trees(range = c(500, 1500)),
+    tree_depth = tree_depth(range = c(3, 11)),
+    learn_rate = learn_rate(range = c(-4, -1), trans = log10_trans()),
+    over_ratio = over_ratio(range = c(0.4, 0.4)),
+    neighbors = neighbors(range = c(3, 7)),
+    mtry = mtry(range = c(4, 8))
+  )
+
+boosting_grid <- grid_regular(
+  boosting_param,
+  levels = c(
+    trees = 6, tree_depth = 5, learn_rate = 4, mtry = 5,
+    over_ratio = 3, neighbors = 3
+  )
+)
+
+n_core <- detectCores(logical = TRUE)
+registerDoParallel(cores = n_core - 2)
+
+boosting_tune_res <- tune_grid(
+  boosting_workflow,
+  resamples = data_folds,
+  grid = boosting_grid,
+  metrics = metric_set(
+    yardstick::recall,
+    accuracy,
+    f_meas
+  )
+)
+
+stopImplicitCluster()
+
+save(boosting_tune_res,file="boosting_tune_res.rda")
+
+best_boo_parameters <- select_best(boosting_tune_res, "f_meas")
+
+final_boosting_wf <- boosting_workflow |>
+  finalize_workflow(best_boo_parameters)
+
+boost_fit <- final_boosting_wf |> last_fit(split = data_split)
+
+save(boost_fit, file = "modele/Boosting_fit_2.rda")
+```
+
+### Optimisation des hyperparamètres
+
+```{r boost_parameter, fig.align="center"}
+load("modele/boosting_tune_res.rda")
+load("modele/Boosting_fit_2.rda")
+
+auto_tune_boost <- autoplot(boosting_tune_res)
+
+plot_boost <- auto_tune_boost$plot_env$dat
+
+plot_boost <- plot_boost[
+  plot_boost$.metric == "f_meas" & 
+  plot_boost$`# Randomly Selected Predictors` == 6, ]
+
+graph_auto_boost <- ggplot() +
+  geom_line(data = plot_boost, aes(x = value, y = mean, color = `Learning Rate`), size = 1) +
+  mon_theme +
+  labs(y = "F-measure", x = "trees")
+
+
+affichage_transparent(graph_auto_boost, 
+                      height = 3, 
+                      scale = 1,
+                      width = 6)
+
+```
+
+```{r boost_opti_param}
+tibble(
+  `mtry` = boost_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["mtry"]][[2]],
+  `Nombre d'arbres` = boost_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["trees"]][[2]],
+  `Profondeur d'arbre` = boost_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["tree_depth"]][[2]],
+  `Taux d'apprentissage` = boost_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["learn_rate"]][[2]],
+  `Taux de re-échantillonnage` = boost_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[1]][["over_ratio"]],
+  `Nombres de voisins utilisé` = boost_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[1]][["neighbors"]]
+) |> tableau_html(titre = NULL, format = "markdown") |> 
+  row_spec(0, bold = TRUE)
+```
+
+### Importance des variables
+
+```{r boost_importance}
+graph_importance_boosting <- extract_fit_parsnip(boost_fit$.workflow[[1]]) |>
+  vip(num_feature = 12) +
+  geom_col(fill = "darkgoldenrod") +
+  labs(title = "Importance des variables") +
+  mon_theme
+
+affichage_transparent(graph_importance_boosting, 
+                      height = 3, 
+                      scale = 1,
+                      width = 6)
+```
+
+
+### Performances du modèle
+
+
+```{r mat_conf_boost}
+boost_conf_test <- data.frame(
+  Réalité = ech_test$churn,
+  Prédiction = boost_fit$.predictions[[1]]$.pred_class
+) |> table()
+
+matrice_confusion(boost_fit) 
+
+```
+\normalsize
+  }
+
+  \ffigbox[][5cm]{Courbe ROC : Boosting}{%
+
+```{r boost_pred}
+boost_pred <- boost_fit |> collect_predictions()
+roc_boost <- roc(ech_test$churn, boost_pred$.pred_1)
+
+roc_graph_boost <- Courbe_roc(roc_boost) +
+  mon_theme + carre_ggplot()
+
+affichage_transparent(roc_graph_boost, 
+                      height = 2, 
+                      scale = 1,
+                      width = 3.5)
+
+```
+
+
+
+
+
+
+```{r boost_perf}
+boost_pred_train <- predict(
+  boost_fit$.workflow[[1]], 
+  new_data = ech_train, 
+  type = "prob"
+)
+
+boost_pred_train$.pred_class <- ifelse(boost_pred_train$.pred_1 > 0.5, 1, 0)
+
+boost_mat_conf_train <- data.frame(
+  Réalité = ech_train$churn,
+  Prédiction = boost_pred_train$.pred_class
+) |> table()
+
+boost_conf_mat_test <- data.frame(
+  Réalité = ech_test$churn,
+  Prédiction = boost_fit$.predictions[[1]]$.pred_class
+) |> table()
+
+perf_modele(
+  boost_conf_mat_test,
+  boost_mat_conf_train,
+  roc_boost,
+  format = "markdown",
+  titre = "Performances du modèle : Boosting"
+)
+
+```
+\normalsize
+
+
+
+# Modèle Retenu
+
+
+
+## Courbes ROC des différents modèles
+
+```{r roc_compare}
+comparaison_roc <- data.frame(
+  Modeles = rep(c(
+    "Boosting", 
+    "QDA", 
+    "LDA", 
+    "KNN", 
+    "Naive Bayes", 
+    "Logit", 
+    "SVM Radial", 
+    "Random Forest", 
+    "Decision Tree"),
+    times = c(
+      length(roc_boost$thresholds),
+      length(roc_qda$thresholds),
+      length(roc_lda$thresholds),
+      length(roc_knn$thresholds),
+      length(roc_naive$thresholds),
+      length(roc_logit$thresholds),
+      length(roc_svm$thresholds),
+      length(roc_rf$thresholds),
+      length(roc_dec$thresholds)
+    )
+  ),
+  specificité = c(
+    roc_boost$specificities,
+    roc_qda$specificities,
+    roc_lda$specificities,
+    roc_knn$specificities,
+    roc_naive$specificities,
+    roc_logit$specificities,
+    roc_svm$specificities,
+    roc_rf$specificities,
+    roc_dec$specificities
+  ),
+  sensibilité = c(
+    roc_boost$sensitivities,
+    roc_qda$sensitivities,
+    roc_lda$sensitivities,
+    roc_knn$sensitivities,
+    roc_naive$sensitivities,
+    roc_logit$sensitivities,
+    roc_svm$sensitivities,
+    roc_rf$sensitivities,
+    roc_dec$sensitivities
+  )
+) |>
+  ggplot(aes(x = specificité, y = sensibilité, color = Modeles)) +
+  geom_line() +
+  mon_theme +
+  geom_segment(aes(x = 0, xend = 1, y = 1, yend = 0), color = "red", linetype = "dotted") +
+  scale_color_discrete(name = "Modèles") +
+  scale_x_continuous(trans = "reverse") +
+  coord_cartesian(ylim = c(0, 1)) +
+  labs(x = "1-spécificité")
+
+affichage_transparent(comparaison_roc, 
+                      height = 4, 
+                      scale = 1,
+                      width = 6)
+```
+
+## Performances des modèles
+
+```{r perf_compar}
+result_lda <- Collecte_mesure(lda_mat_conf, lda_mat_conf_train, roc_lda) |> t()
+result_qda <- Collecte_mesure(qda_conf_test, qda_mat_conf_train, roc_qda) |> t()
+result_knn <- Collecte_mesure(knn_conf_test, knn_mat_conf_train, roc_knn) |> t()
+result_naive <- Collecte_mesure(naive_conf_test, naive_mat_conf_train, roc_naive) |> t()
+result_svmr <- Collecte_mesure(svm_conf_test, svm_mat_conf_train, roc_svm) |> t()
+result_logit <- Collecte_mesure(logit_conf_test, logit_mat_conf_train, roc_logit) |> t()
+result_dec_tree <- Collecte_mesure(dec_conf_test, dec_mat_conf_train, roc_dec) |> t()
+result_rf <- Collecte_mesure(rf_conf_test, rf_mat_conf_train, roc_rf) |> t()
+result_boost <- Collecte_mesure(boost_conf_mat_test, boost_mat_conf_train, roc_boost) |> t()
+
+mesure_perf_lda <- cbind(
+  result_lda[1],
+  result_lda[5],
+  result_lda[6],
+  result_lda[9],
+  result_lda[10]
+)
+colnames(mesure_perf_lda) <- c("Précision", "Sensibilité", "F_score", "AUC", "Accuracy")
+rownames(mesure_perf_lda) <- "LDA"
+
+mesure_perf_qda <- cbind(result_qda[1], result_qda[5], result_qda[6], result_qda[9], result_qda[10])
+colnames(mesure_perf_qda) <- c("Précision", "Sensibilité", "F_score", "AUC", "Accuracy")
+rownames(mesure_perf_qda) <- "QDA"
+
+mesure_perf_knn <- cbind(result_knn[1], result_knn[5], result_knn[6], result_knn[9], result_knn[10])
+colnames(mesure_perf_knn) <- c("Précision", "Sensibilité", "F_score", "AUC", "Accuracy")
+rownames(mesure_perf_knn) <- "KNN"
+
+mesure_perf_naive <- cbind(result_naive[1], result_naive[5], result_naive[6], result_naive[9], result_naive[10])
+colnames(mesure_perf_naive) <- c("Précision", "Sensibilité", "F_score", "AUC", "Accuracy")
+rownames(mesure_perf_naive) <- "Naive Bayes"
+
+mesure_perf_svmr <- cbind(result_svmr[1], result_svmr[5], result_svmr[6], result_svmr[9], result_svmr[10])
+colnames(mesure_perf_svmr) <- c("Précision", "Sensibilité", "F_score", "AUC", "Accuracy")
+rownames(mesure_perf_svmr) <- "SVM Radial"
+
+mesure_perf_logit <- cbind(result_logit[1], result_logit[5], result_logit[6], result_logit[9], result_logit[10])
+colnames(mesure_perf_logit) <- c("Précision", "Sensibilité", "F_score", "AUC", "Accuracy")
+rownames(mesure_perf_logit) <- "Logit"
+
+mesure_perf_dec_tree <- cbind(result_dec_tree[1], result_dec_tree[5], result_dec_tree[6], result_dec_tree[9], result_dec_tree[10])
+colnames(mesure_perf_dec_tree) <- c("Précision", "Sensibilité", "F_score", "AUC", "Accuracy")
+rownames(mesure_perf_dec_tree) <- "Decision Tree"
+
+mesure_perf_rf <- cbind(result_rf[1], result_rf[5], result_rf[6], result_rf[9], result_rf[10])
+colnames(mesure_perf_rf) <- c("Précision", "Sensibilité", "F_score", "AUC", "Accuracy")
+rownames(mesure_perf_rf) <- "Random Forest"
+
+mesure_perf_boost <- cbind(result_boost[1], result_boost[5], result_boost[6], result_boost[9], result_boost[10])
+colnames(mesure_perf_boost) <- c("Précision", "Sensibilité", "F_score", "AUC", "Accuracy")
+rownames(mesure_perf_boost) <- "Boosting"
+
+toutes_perf <- rbind(mesure_perf_lda, mesure_perf_qda, mesure_perf_knn, mesure_perf_naive, mesure_perf_svmr, mesure_perf_logit, mesure_perf_dec_tree, mesure_perf_rf, mesure_perf_boost) 
+
+toutes_perf |>
+  tableau_html(format = "markdown", row.names = TRUE) |> 
+  row_spec(0, bold = TRUE) |> 
+  column_spec(1, bold = TRUE) |> 
+  column_spec(2, color = ifelse(toutes_perf[,1] == max(toutes_perf[,1]), "green", ifelse(toutes_perf[,1] == min(toutes_perf[,1]), "red", "black"))) |> 
+  column_spec(3, color = ifelse(toutes_perf[,2] == max(toutes_perf[,2]), "green", ifelse(toutes_perf[,2] == min(toutes_perf[,2]), "red", "black"))) |>
+  column_spec(4, color = ifelse(toutes_perf[,3] == max(toutes_perf[,3]), "green", ifelse(toutes_perf[,3] == min(toutes_perf[,3]), "red", "black"))) |>
+  column_spec(5, color = ifelse(toutes_perf[,4] == max(toutes_perf[,4]), "green", ifelse(toutes_perf[,4] == min(toutes_perf[,4]), "red", "black"))) |>
+  column_spec(6, color = ifelse(toutes_perf[,5] == max(toutes_perf[,5]), "green", ifelse(toutes_perf[,5] == min(toutes_perf[,5]), "red", "black")))
+```
+
+
+
+
+
+## Optimisation du boosting
+
+
+```{r boost_seuil}
+load("modele/Boosting_fit_2.rda")
+
+mesure_perf_boost_thresh <- NULL
+range_threshold <- seq(0.1, 0.9, 0.01)
+
+for (i in range_threshold) {
+  boost_pred_thresh <- predict(boost_fit$.workflow[[1]], new_data = ech_test, type = "prob")
+  boost_pred_thresh$.pred_class <- ifelse(boost_pred_thresh$.pred_1 > i, 1, 0)
+  boost_conf_mat_thresh <- data.frame(
+    Réalité = ech_test$churn,
+    Prédiction = boost_pred_thresh$.pred_class
+  ) |> table()
+
+  roc_boost_thresh <- roc(ech_test$churn, boost_pred_thresh$.pred_1)
+  result_thresh <- Collecte_mesure(boost_conf_mat_thresh, NULL, roc_boost_thresh) |> t()
+  mesure_perf_boost_thresh <- rbind(mesure_perf_boost_thresh, cbind(result_thresh[1], result_thresh[5], result_thresh[6], result_thresh[9], i))
+}
+
+colnames(mesure_perf_boost_thresh) <- c("Précision", "Sensibilité", "F_score", "Accuracy", "threshold")
+
+
+graph_mesure <- ggplot(data = as.data.frame(mesure_perf_boost_thresh)) +
+  geom_line(aes(x = threshold, y = Sensibilité, color = "Sensibilité")) +
+  geom_line(aes(x = threshold, y = Précision, color = "Précision")) +
+  geom_line(aes(x = threshold, y = F_score, color = "F_score")) +
+  geom_line(aes(x = threshold, y = Accuracy, color = "Accuracy")) +
+  mon_theme +
+  labs(
+    title = "Evolution des performances selon le seuil",
+    y = " "
+  ) +
+  scale_color_manual(values = c("Sensibilité" = "blue", "Précision" = "red", "F_score" = "green", "Accuracy" = "gold"), name = "Mesure")
+
+affichage_transparent(graph_mesure, 
+                      height = 3, 
+                      scale = 1,
+                      width = 6)
+```
+
+
+
+## Seuil de classification optimal
+
+```{r seuil_opti}
+mesure_perf_boost_thresh <- data.frame(mesure_perf_boost_thresh)
+
+mesure_perf_boost_thresh <- mesure_perf_boost_thresh |>
+  mutate(Moyenne = (Sensibilité + Précision + F_score + Accuracy) / 4)
+
+mesure_perf_boost_thresh <- mesure_perf_boost_thresh |>
+  arrange(desc(Moyenne)) |>
+  head(5) 
+mesure_perf_boost_thresh |> 
+  tableau_html(titre = "Meilleurs seuils de classification", format = "markdown", row.names = FALSE) |> 
+  row_spec(0, bold = TRUE) |> 
+  column_spec(1, color = ifelse(mesure_perf_boost_thresh[,1] == max(mesure_perf_boost_thresh[,1]), "green","black")) |>
+  column_spec(2, color = ifelse(mesure_perf_boost_thresh[,2] == max(mesure_perf_boost_thresh[,2]), "green","black")) |>
+  column_spec(3, color = ifelse(mesure_perf_boost_thresh[,3] == max(mesure_perf_boost_thresh[,3]), "green","black")) |>
+  column_spec(4, color = ifelse(mesure_perf_boost_thresh[,4] == max(mesure_perf_boost_thresh[,4]), "green","black")) |>
+  column_spec(6, color = ifelse(mesure_perf_boost_thresh[,6] == max(mesure_perf_boost_thresh[,6]), "green","black"))
+```
+
+
+
+# CONCLUSION
+
+
+
+```{r boost_opti}
+tibble(
+  `mtry` = boost_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["mtry"]][[2]],
+  `Nombre d'arbres` = boost_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["trees"]][[2]],
+  `Profondeur d'arbre` = boost_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["tree_depth"]][[2]],
+  `Taux d'apprentissage` = boost_fit[[6]][[1]][["fit"]][["fit"]][["spec"]][["args"]][["learn_rate"]][[2]],
+  `Taux de re-échantillonnage` = boost_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[1]][["over_ratio"]],
+  `Nombres de voisins utilisé` = boost_fit[[6]][[1]][["pre"]][["actions"]][["recipe"]][["recipe"]][["steps"]][[1]][["neighbors"]]
+) |> tableau_html(titre = NULL, format = "markdown") |> 
+  row_spec(0, bold = TRUE)
+```
+
+
+
+
+```{r boost_perf_final}
+Collecte_mesure(boost_conf_mat_test, boost_mat_conf_train, roc_boost) |>
+  tableau_html(format = "markdown", row.names = TRUE,
+               titre = "Performances du modèle final : Boosting") |> 
+  column_spec(1, bold = TRUE)
+```
+\normalsize
+
+# ANNEXES
+
+
+
+

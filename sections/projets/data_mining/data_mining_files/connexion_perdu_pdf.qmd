@@ -1,0 +1,11 @@
+---
+title: "{{< fa file-pdf >}} Rapport pdf"
+description: "Vous pouvez accéder au rapport complet en format pdf."
+image: "connexion_perdu.png"
+date: "2024-04-15"
+categories: "pdf"
+author: "Hugo Cochereau & Gregory Jaillet"
+---
+
+[{{< fa file-pdf >}} Accéder au rapport complet](connexions_perdu.pdf){.btn .btn-outline-primary .btn-lg .center target="_blank"}
+

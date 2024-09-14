@@ -1,0 +1,13 @@
+---
+title: "{{< fa file-pdf >}} Rapport pdf"
+title-block-banner: true
+description: "Vous pouvez accéder au rapport complet en format pdf."
+image: "main_garde.png"
+date: "2024-07-31"
+categories: "pdf"
+author: "Hugo Cochereau"
+---
+
+[{{< fa file-pdf >}} Accéder au rapport complet](main.pdf){.btn .btn-outline-primary .btn-lg .center target="_blank"}
+
+

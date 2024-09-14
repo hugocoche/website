@@ -1,0 +1,50 @@
+/* animation des liens externes */
+div.quarto-about-trestles .about-entity .about-link:hover {
+    color: #8B6508; 
+    transition: 1.5s; 
+    background-color: #343a40; 
+} 
+
+/* animation du bouton de téléchargement */
+.custom-hover:hover{
+    color: #8B6508;
+    background-color: #343a40;
+    transition: 1s;
+}
+
+img {
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    border-color: #343a40;
+    transition: transform 1s; /* Ajoute une transition pour l'animation */
+    transform-style: preserve-3d; /* Préserve la transformation 3D */
+    animation: spin 5s linear infinite; /* Applique l'animation de rotation en continu */
+}
+
+
+
+/* Définir l'animation de rotation */
+@keyframes spin {
+    from {
+        transform: rotateY(0deg);
+    }
+    to {
+        transform: rotateY(360deg);
+    }
+}
+
+
+/* Animation pour le texte de bienvenue */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+h2 {
+    animation: fadeIn 4s ease-in-out infinite;
+}
