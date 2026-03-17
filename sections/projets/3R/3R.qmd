@@ -1,0 +1,45 @@
+---
+title: "3R : Attrition, Valeur Client et Portefeuille"
+title-block-banner: true
+description: "Le rapport présente l'analyse la valeur vie client (Customer Lifetime Value – CLV) et les facteurs influençant la fidélisation dans le secteur des télécommunications. S’appuyant sur la base de données *Telco* (plus de 7 000 clients), l’étude vise à estimer la valeur économique de chaque client et du portefeuille global, en intégrant des variables démographiques, contractuelles, d’usage des services et financières."
+image: "./3R_files/3R.png"
+categories: ["R", "Python", "Statistiques", "Économétrie"]
+date: "2025-04-01"
+author: "Hugo Cochereau & Gregory Jaillet"
+format: 
+    html:
+        css: "../../sections_css/style_projets.css"
+listing: 
+    contents: 3R_files
+    type: grid
+    grid-columns: 3
+    grid-item-border: true
+    categories: true
+---
+
+***
+
+Le rapport présente l'analyse la valeur vie client (Customer Lifetime Value – CLV) et les facteurs influençant la fidélisation dans le secteur des télécommunications. S’appuyant sur la base de données *Telco* (plus de 7 000 clients), l’étude vise à estimer la valeur économique de chaque client et du portefeuille global, en intégrant des variables démographiques, contractuelles, d’usage des services et financières.
+
+## Objectif principal :
+Construire un modèle économétrique avec une analyse de survie pour permettre une meilleure anticipation de la résiliation et de maximiser la rentabilité via des stratégies de fidélisation optimisées.
+
+## Méthodologie :
+
+- Analyse descriptive de la base (70 % de clients actifs, 30 % résiliés).
+
+- Estimation de la CLV sur 36 mois selon trois scénarios (pessimiste, central, optimiste) et trois contextes (avant contrat, après contrat, après sondage).
+
+- Utilisation d’outils d’analyse de survie et de modèles économétriques pour identifier les variables clés : type de contrat, offres souscrites, montant des paiements, satisfaction client.
+
+## Résultats :
+
+- Les contrats longs et les services multiples augmentent fortement la fidélité.
+
+- La satisfaction client (score de 1 à 5) joue un rôle majeur dans la rétention.
+
+- L’estimation du portefeuille Telco s’élève à environ 11,7 millions USD (scénario central), avec un écart réduit de 1,2 M$ par rapport à la réalité grâce aux modèles intégrant la satisfaction et les paiements.
+
+## Conclusion :
+L’étude démontre l’efficacité des approches d’analyse de survie pour la valorisation client et recommande un suivi dynamique (notamment de la satisfaction) afin d’améliorer la prédiction de la résiliation et d’optimiser les stratégies de fidélisation à long terme
+.

@@ -1,40 +1,8 @@
-
-.card:hover {
-    background-color: #343a40;
-    transition: 0.5s;
-    cursor: pointer;
-    color: #8B6508;
-}
-
-/* catégorie exemple : python */
-.card-title.listing-title {
-    margin-bottom: 10px;
-}
-.listing-category:hover {
-    color: #8B6508 !important;
-    transition: 0.5s;
-    cursor: pointer;
-    text-shadow: 0 0 5px #8B6508;
-    background-color: #343a40;
-}
-
-
-/* image */
-.thumbnail-image {
-    transition: transform 0.3s ease; /* Ajoute une transition fluide */
-    filter: blur(2px); /* floutage */
-}
-
-/* animation de l'image au survol */
-.card:hover .thumbnail-image {
-    transform: scale(1.1); /* zoom */
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    filter: blur(0);
-}
-
 /* écran plus large */
-@media (min-width: 1200px){
-    #quarto-document-content, #title-block-header.quarto-title-block.default.page-columns.page-full {
+@media (min-width: 1200px) {
+
+    #quarto-document-content,
+    #title-block-header.quarto-title-block.default.page-columns.page-full {
         margin-left: -10vw;
     }
 }
@@ -42,7 +10,7 @@
 
 /* entête des projets */
 
-.description{
+.description {
     color: white;
     padding: 20px;
 }
@@ -51,7 +19,7 @@
 /* style du titre */
 .quarto-title-banner .title {
     color: #8B6508;
-    position: relative ;
+    position: relative;
 }
 
 .quarto-title-banner .title::before,
@@ -61,13 +29,16 @@
     left: 0;
     right: 0;
     height: 2px;
-    background-color: #8B6508; /* Couleur des lignes */
+    background-color: #8B6508;
+    /* Couleur des lignes */
 }
 
 .quarto-title-banner .title::before {
-    top: -10px; /* Positionner la ligne au-dessus du titre */
+    top: -10px;
+    /* Positionner la ligne au-dessus du titre */
 }
 
 .quarto-title-banner .title::after {
-    bottom: -10px; /* Positionner la ligne en dessous du titre */
+    bottom: -10px;
+    /* Positionner la ligne en dessous du titre */
 }

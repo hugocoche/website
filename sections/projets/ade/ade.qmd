@@ -1,9 +1,9 @@
 ---
 title: "{{< fa music >}} Mélodie énigmatique"
 title-block-banner: true
-description: "Ce projet visait à identifier la musique la plus prometteuse en termes de popularité, en utilisant diverses méthodes d'analyse factorielle."
+description: "Ce projet visait à identifier la musique la plus prometteuse en termes de popularité, en utilisant diverses méthodes d'analyse factorielle ainsi que des méthode de clustering."
 image: "ade_files/headphones.jpg"
-categories: ["R", "Markdown", "Statistiques"]
+categories: ["R", "Statistiques", "Apprentissage non-supervisée"]
 date: "2024-01-25"
 author: "Hugo Cochereau, Gabin Sengel & Adam Belamiri"
 format: 

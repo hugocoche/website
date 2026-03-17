@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://hugocoche.quarto.pub/hugo-cochereau/sitemap.xml

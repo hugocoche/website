@@ -3,7 +3,7 @@
 title: "{{< fa balance-scale >}} Richesse = Démocratie ?"
 title-block-banner: true
 description: "Étude de l'impact de la richesse d'un pays sur son niveau de démocratie à l'aide de données de panel. La seconde partie de ce projet aborde des questions théoriques sur les séries temporelles."
-categories: ["R", "markdown", "Econométrie"]
+categories: ["R", "Économétrie"]
 date: "2024-01-11"
 author: "Hugo Cochereau & Grégory Jaillet"
 format: 

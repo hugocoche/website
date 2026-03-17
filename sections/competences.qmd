@@ -7,128 +7,171 @@ format:
 ---
 
 
-
 <div class="skills-container">
-<div class="skills-section">
+<div class="skills-section theoretical-knowledge">
   <h2>📚 Connaissances théoriques </h2>
   <ul>
     <li>
       <details>
-          <summary><strong>{{< fa solid scale-balanced >}} Économie</strong> : Spécialisation en économie industrielle</summary>
+        <summary><strong>{{< fa chart-bar >}}</strong> Statistiques :</summary>
+        <ul>
+          <li>Théorie fréquentiste et bayésienne, tests d'hypothèses</li>
+          <li>Théorie des sondages</li>
+        </ul>
+      </details>
+    </li>
+    <li>
+      <details>
+        <summary><strong>{{< fa chart-line >}}</strong> Économétrie : </summary>
+        <ul>
+          <li>Analyse des Séries Temporelles, Modèles utilisant des données de panel, Modèles à Variable Dépendante qualitative, Modèles Censurés et Tronqués, Modèles de comptage, Analyse de Survie.</li>
+        </ul>
+      </details>
+    </li>
+    <li>
+      <details>
+          <summary><strong>{{< fa solid scale-balanced >}} </strong> Économie :</summary>
           <ul>
-            <li><strong>Microéconomie : </strong>théorie du consommateur, théorie du producteur, équilibre partiel et général.</li>
-            <li><strong>Économie industrielle : </strong>monopole, oligopole, théorie des jeux.</li>
-            <li><strong>Macroéconomie : </strong>croissance économique, inflation, chômage, politiques monétaires et fiscales.</li>
+            <li><strong>Microéconomie : </strong>Théorie du consommateur, Théorie du producteur, Équilibre partiel et général, Externalités, Biens collectifs, Monopole.</li>
+            <li><strong>Économie industrielle : </strong> Différenciation des produits, Publicité, Inertie du consommateur, Garantie, Branding, Économie des plateformes.</li>
+            <li><strong>Théorie des jeux : </strong> Application sur des problèmes d'économie industrielle.</li>
           </ul>
       </details>
     </li>
     <li>
       <details>
-        <summary><strong>{{< fa calculator >}} Mathématiques :</strong></summary>
+        <summary><strong>{{< fa calculator >}}</strong> Mathématiques :</summary>
         <ul>
-          <li>Algèbre linéaire, suites, équation différentielles, optimisation, dynamique.</li>
-        </li>
-        </ul>
-      </details>
-    </li>
-    <li>
-      <details>
-        <summary><strong>{{< fa chart-bar >}} Statistiques :</strong>  Analyse et interprétation des données.</summary>
-        <ul>
-          <li>Théorie fréquentiste et bayésienne, tests d'hypothèses
-          </li>
-          <li>Théorie des sondages</li>
-        </li>
-        </ul>
-      </details>
-    </li>
-    <li>
-      <details>
-        <summary><strong>{{< fa chart-line >}} Économétrie : </strong>
-        </summary>
-        <ul>
-          <li>Analyse des séries temporelles, modèles de panel, modèles à variable dépendante qualitative, ainsi que des modèles censurés et tronqués.</li>
+          <li>Algèbre linéaire, Suites, Équations différentielles, Optimisation, Dynamiques.</li>
         </ul>
       </details>
     </li>
   </ul>
 </div>
 
-<div class="skills-section">
+<div class="skills-section programming-languages">
   <h2> {{< fa code >}} Langages </h2>
-  </h2>
   <ul>
     <li>
       <details>
-        <summary><strong>{{< fa brands python >}} python : </strong> Langage de programmation généraliste.</summary>
+        <summary><strong>{{< fa brands python >}} </strong> Python :</summary>
         <ul>
-          <li>Déploiement d'applications data par le biais de `streamlit`.
-          </li>
-          <li>Manipulation de données avec `pandas` et `numpy`.</li>
-          <li>Visualisation de données avec `matplotlib` mais surtout avec `plotly`.</li>
-          <li>Développement de code de haute qualité en utilisant `mypy` pour le typage statique, `black` pour le linting et le formatage, et `pytest` pour les tests unitaires.</li>
-        </li>
+          <li>*Déploiement d'applications data* par le biais de `Streamlit`.</li>
+          <li>*Manipulation de données* avec `pandas`, `Polars` et `NumPy`.</li>
+          <li>*Visualisation de données* avec `Matplotlib`, `seaborn` et `plotly`.</li>
+          <li>Développement de code en utilisant `mypy` pour le typage statique, `black` pour le linting et le formatage, et `pytest` pour les tests unitaires.</li>
+          <li>*Machine learning* avec `scikit-learn`</li>
+          <li>*Web scraping* avec `BeautifulSoup` et `Selenium`.</li>
+          <li>`spaCy` pour le traitement du langage naturel.</li>
+          <li>Gestion de projets avec `uv`.</li>
         </ul>
       </details>
     </li>
     <li>
       <details>
-        <summary><strong>{{< fa brands r-project >}} : </strong> Langage de programmation statistique.</summary>
+        <summary><strong>{{< fa brands r-project >}} </strong> Langage R :</summary>
         <ul>
-          <li>*Data Manipulation* avec `dplyr` et `tidyr`.</li>
-          </li>
-          <li>Création de tableaux par le biais de `kableExtra` ou de `gt` pour les tableaux interactifs.
-          </li>
-          <li>Visualisation de données avec `ggplot2`</li>
-          <li>Analyse factorielle avec `FactoMineR` et `factoextra`.
-          </li>
+          <li>*Manipulation des données* avec `dplyr` et `tidyr`.</li>
+          <li>Création de tableaux par le biais de `kableExtra` ou de `gt` pour les tableaux interactifs.</li>
+          <li>*Visualisation de données* avec `ggplot2`</li>
+          <li>Analyse factorielle avec `FactoMineR` et `factoextra`.</li>
           <li>Machine learning avec `caret` et `tidymodels`.</li>
           <li>Modélisation économétrique</li>
-          <li> Utilisation de `styler` pour le formatage du code.
-          </li>
+          <li>Utilisation de `styler` pour le formatage du code.</li>
         </ul>
       </details>
     </li>
-    <li><strong>{{< fa solid database >}} SQL : </strong>Langage de requêtes pour les bases de données.</li>
+    <li>
+      <details>
+        <summary><strong>{{< fa solid database >}} </strong> SQL :</summary>
+        <ul>
+          <li>Requêtes et sous-requêtes, jointures, fonctions d'agrégation, vues et CTE.</li>
+        </ul>
+      </details>
+    </li>
   </ul>
 </div>
 
-<div class="skills-section">
+<div class="skills-section general-skills">
   <h2>{{< fa lightbulb >}} Compétences générales </h2>
   <ul>
     <li>
       <details>
-        <summary><strong>{{< fa solid chalkboard-teacher >}}</strong> Capacité de présentation et de vulgarisation</summary>
+        <summary><strong>{{< fa solid chalkboard-teacher >}}</strong> Capacité de présentation :</summary>
         <ul>
-          <li>Pendant mes études, j'ai eu l'occasion de présenter les aspects techniques de mes projets et j'ai eu l'opportunité de présenter ces informations à différents publics.
-          </li>
+          <li>Pendant mes études, j'ai eu l'occasion de présenter les aspects techniques de mes projets et j'ai eu l'opportunité de présenter ces informations à différents publics.</li>
         </ul>
       </details>
     </li>
     <li>
       <details>
-        <summary><strong>{{< fa users >}}</strong> Travail en collaboration</summary>
+        <summary><strong>{{< fa users >}}</strong> Travail en collaboration :</summary>
         <ul>
-          <li>Au cours de mes études de master, j'ai été amené à collaboré avec plusieurs personnes sur divers projets académiques.
-          </li>
+          <li>Au cours de mes études de master, j'ai été amené à collaborer avec plusieurs personnes sur divers projets académiques.</li>
         </ul>
       </details>
     </li>
-    <li><strong><img src="../imgs/en_flag.jpg" alt="UK Flag" style="width: 20px; height: auto;"></strong> : Anglais</li>
+    <li><details><summary><strong><img src="../imgs/en_flag.jpg" alt="UK Flag" style="width: 20px; height: auto;"></strong> Anglais :</summary></details></li>
   </ul>
 </div>
 
-<div class="skills-section">
+<div class="skills-section tools-and-technologies">
   <h2>🛠️ Outils et Technologies</h2>
   <ul>
-    <li><strong>{{< fa brands git >}} : </strong>Gestion de versions.</li>
-    <li><strong>{{< fa brands markdown >}} Markdown : </strong>Langage de balisage léger.</li>
-    <li><strong>{{< fa file-code >}} Quarto : </strong>Génération de documents interactifs.</li>
-    <li><strong>{{< fa file-excel >}} Excel</strong></li>
+    <li>
+      <details>
+        <summary>Dataiku : </summary>
+      </details>
+    </li>
+    <li>
+      <details>
+        <summary>Tableau : </summary>
+      </details>
+    </li>
+    <li>
+      <details>
+        <summary><strong>{{< fa brands git >}} </strong>Versioning :</summary>
+      </details>
+    </li>
+    <li><details><summary><strong>{{< fa brands markdown >}} </strong> Markdown :</summary></details></li>
+    <li>
+      <details>
+        <summary><strong>{{< fa file-code >}} </strong> Quarto :</summary>
+        <ul>
+          <li>Création de diaporamas avec `reveal.js`.</li>
+          <li>Création de site Web</li>
+        </ul>
+      </details>
+    </li>
   </ul>
 </div>
 </div>
 
 
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const detailsElements = document.querySelectorAll("details");
+
+    detailsElements.forEach(details => {
+      details.addEventListener("toggle", function() {
+        const content = this.querySelector("ul");
+        if (this.open) {
+          content.style.maxHeight = content.scrollHeight + "px";
+        } else {
+          content.style.maxHeight = content.scrollHeight + "px"; // Set to scrollHeight to trigger transition
+          setTimeout(() => {
+            content.style.maxHeight = "0";
+          }, 10); // Delay to allow transition to take effect
+        }
+      });
+
+      // Initialize max-height for already open details
+      if (details.open) {
+        const content = details.querySelector("ul");
+        content.style.maxHeight = content.scrollHeight + "px";
+      }
+    });
+  });
+</script>
 
   

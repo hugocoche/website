@@ -9,59 +9,161 @@ format:
 ---
 
 <div class="container">
-<!-- <div class="column">
+
+<!-- PARCOURS PROFESSIONNEL -->
+<div class="column">
 <h2>{{< fa briefcase >}} Parcours Professionnel</h2>
 <ul>
-<li><strong>Data Scientist</strong> chez XYZ Corp (2020 - Présent)
-<ul>
-<li>Analyse des données et création de modèles prédictifs.</li>
-<li>Développement de tableaux de bord interactifs.</li>
-</ul>
+
+<!-- Poste actuel -->
+<li style="position:relative; margin-bottom:20px;">
+<div>
+<span style="color:black;font-weight:bold;">Depuis Décembre 2025</span><br>
+<strong>Chargé d'études statistiques</strong> <span style="color:black;font-weight:bold;">Macif</span><br>
+<i class="fas fa-location-dot"></i> Tours, France <br>
+</div>
+
+<img src="parcours_files/logo_macif.png" 
+alt="Macif Image" 
+style="position:absolute; top:0; right:0; width:60px; height:auto;">
 </li>
-<li><strong>Analyste de Données</strong> chez ABC Inc (2018 - 2020)
+<hr>
+
+<!-- Stage -->
+<li style="position:relative; margin-bottom:20px;">
+<div>
+<span style="color:black;font-weight:bold;">Avril 2025 - Septembre 2025</span><br>
+<strong>Stage Data Analyst RH</strong> <span style="color:black;font-weight:bold;">Macif</span><br>
+<i class="fas fa-location-dot"></i> Tours, France <br>
+
 <ul>
-<li>Collecte et nettoyage des données.</li>
-<li>Visualisation des données pour les parties prenantes.</li>
+<li>Recueil et traduction des besoins métiers en solutions data concrètes, durables et adaptées aux enjeux stratégiques.</li>
+<li>Conception d’indicateurs de performance RH (dont turnover) pour orienter les décisions clés.</li>
+<li>Automatisation des reportings sous Tableau, permettant des gains de temps significatifs sur les processus RH.</li>
+<li>Développement de scénarios Dataiku pour fiabiliser les indicateurs sociaux et supprimer les tâches manuelles répétitives.</li>
+<li>Création d’outils de collecte de données via Google Sheets pour améliorer la richesse et la qualité des analyses.</li>
+<li>Rédaction de documentations techniques et fonctionnelles favorisant la maintenance et l’adoption des solutions data.</li>
 </ul>
+</div>
+
+<img src="parcours_files/logo_macif.png" 
+alt="Macif Image" 
+style="position:absolute; top:0; right:0; width:60px; height:auto;">
 </li>
+<hr>
+
 </ul>
-</div> -->
+</div>
+
+<!-- PARCOURS ACADEMIQUE -->
 <div class="column">
 <h2><i class="fas fa-graduation-cap"></i> Parcours Académique</h2>
 <ul>
-<li>
-<div style="display: flex; align-items: center;">
-<div style="flex: 1;">
-<span style="color: black; font-weight: bold;">2023 - 2024</span><br>
-<strong>Master en Data Science/Economie (en cours)</strong> <span style="color: black; font-weight: bold;">Université de Tours</span><br>
-<i class="fas fa-location-dot"></i> Tours, France <br>
-<a href="https://droit.univ-tours.fr/version-francaise/masters/master-economie-de-lentreprise-et-des-marches-economiste-dentreprise-1" target="_blank">En savoir plus</a>
+
+
+
+<!-- MASTER Coda (à compléter)
+<li style="position:relative; margin-bottom:20px;">
+<div>
+<span style="color:black;font-weight:bold;">2026 - 2028</span><br>
+<strong>Master en Data Science & IA (en alternance)</strong> <span style="color:black;font-weight:bold;">Coda School</span><br>
+<i class="fas fa-location-dot"></i> Orléans, France <br>
+
+<p>
+Ce master permet de développer une expertise complète en intelligence artificielle et data 
+science, en combinant théorie et pratique à travers des projets réels et des périodes en entreprise.
+je vais y acquérir la maîtrise des techniques avancées de machine learning, deep learning, NLP, computer 
+vision et IA générative, ainsi que la capacité à structurer, nettoyer et valoriser des données massives.
+</p>
+
+<p>
+La formation offre la possibilité de concevoir des solutions intelligentes (systèmes prédictifs, 
+chatbots, moteurs de recommandation), de piloter des projets data et d’intégrer les enjeux éthiques 
+et environnementaux dans les choix techniques. De plus, l’alternance offre une immersion professionnelle 
+concrète, ce qui renforcera mon expérience pratique et ma capacité à contribuer rapidement à des projets 
+data en entreprise.
+</p>
+
+<a href="https://www.coda.school/formation/master-data-science-et-ia"
+target="_blank">En savoir plus</a>
 </div>
-<div style="flex: 0;">
-<img src="parcours_files\logo_MECEN.png" alt="Master Image" style="width: 100px; height: auto; margin-left: 20px;">
-</div>
-</div>
+
+<img src="parcours_files/logo_coda.png" 
+alt="Master Coda Image" 
+style="position:absolute; top:0; right:0; width:60px; height:auto;">
 </li>
 <hr>
-<li>
-<div style="display: flex; align-items: center;">
-<div style="flex: 1;">
-<span style="color: black; font-weight: bold;">2020 - 2023</span><br>
-<strong>Licence en Économie de l'entreprise</strong> <span style="color: black; font-weight: bold;">Université de Tours</span><br>
+-->
+
+
+<!-- MASTER -->
+<li style="position:relative; margin-bottom:20px;">
+<div>
+<span style="color:black;font-weight:bold;">2023 - 2025</span><br>
+<strong>Master en Data Science / Economie</strong> <span style="color:black;font-weight:bold;">Université de Tours</span><br>
 <i class="fas fa-location-dot"></i> Tours, France <br>
-<a href="https://droit.univ-tours.fr/version-francaise/licences-licence-professionnelle/licence-economie-2" target="_blank">En savoir plus</a>
+
+<p>
+Ce master m’a permis de consolider mes compétences en économie industrielle, notamment grâce à
+l’utilisation avancée de la théorie des jeux pour analyser les comportements stratégiques des
+entreprises en situation de concurrence. J’y ai également acquis une maîtrise structurée de la
+chaîne de valeur de la donnée : collecte, préparation, analyse et valorisation. La formation
+intègre des enseignements approfondis en Python, R et SQL.
+</p>
+<a href="https://www.univ-tours.fr/formations/master-droit-economie-gestion-mention-economie-de-lentreprise-et-des-marches"
+target="_blank">En savoir plus</a>
 </div>
-<div style="flex: 0;">
-<img src="parcours_files\logo_ut.png" alt="Licence Image" style="width: 100px; height: auto; margin-left: 20px;">
-</div>
-</div>
+
+<img src="parcours_files/logo_MECEN.png" 
+alt="Master Image" 
+style="position:absolute; top:0; right:0; width:60px; height:auto;">
 </li>
 <hr>
+
+<!-- LICENCE -->
+<li style="position:relative; margin-bottom:20px;">
+<div>
+<span style="color:black;font-weight:bold;">2020 - 2023</span><br>
+<strong>Licence en Économie de l'entreprise</strong> <span style="color:black;font-weight:bold;">Université de Tours</span><br>
+<i class="fas fa-location-dot"></i> Tours, France <br>
+
+<p>
+Cette licence m’a permis d’acquérir une compréhension solide des principaux concepts de l’économie
+tout en développant une capacité d’analyse critique. La formation combine :
+</p>
+
+<ol>
+<li>Fondements théoriques en microéconomie et macroéconomie.</li>
+<li>Compétences quantitatives et qualitatives : mathématiques, statistiques, probabilités, analyse de données et économétrie.</li>
+<li>Première mise en pratique via informatique et utilisation de R pour des projets appliqués.</li>
+</ol>
+
+<p>
+Cette formation constitue ainsi un socle théorique et méthodologique solide pour aborder des analyses
+économiques rigoureuses et des projets mobilisant les données.
+</p>
+
+<a href="https://droit.univ-tours.fr/version-francaise/licences-licence-professionnelle/licence-economie-2"
+target="_blank">En savoir plus</a>
+</div>
+
+<img src="parcours_files/logo_ut.png" 
+alt="Licence Image" 
+style="position:absolute; top:0; right:0; width:60px; height:auto;">
+</li>
+<hr>
+
+<!-- BAC -->
 <li>
-<span style="color: black; font-weight: bold;">2017 - 2020</span><br>
-<strong>Baccalauréat ES option économie approfondie</strong> <span style="color: black; font-weight: bold;">Lycée François Rabelais</span><br>
+<span style="color:black;font-weight:bold;">2017 - 2020</span><br>
+<strong>Baccalauréat ES option économie approfondie</strong> <span style="color:black;font-weight:bold;">Lycée François Rabelais</span><br>
 <i class="fas fa-location-dot"></i> Chinon, France
 </li>
+
 </ul>
 </div>
 </div>
+
+
+
+

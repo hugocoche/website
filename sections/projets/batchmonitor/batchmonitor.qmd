@@ -1,7 +1,7 @@
 ---
 title: "{{< fa calculator >}} Batch Monitor"
 title-block-banner: true
-description: "BatchMonitor est une bibliothèque de programmation linéaire conçue avec {{< fa brands python >}} pour résoudre des problèmes d'optimisation dans divers domaines tels que la logistique et la fabrication. Elle offre une API simplifiée et des outils d'analyse pour minimiser les dépenses et maximiser les profits."
+description: "BatchMonitor est une bibliothèque de programmation linéaire conçue avec python et le package Pulp pour résoudre des problèmes d'optimisation dans divers domaines tels que la logistique et la fabrication. Elle offre une API simplifiée."
 image: "batchmonitor.png"
 categories: ["Python", "Streamlit"]
 date: "2024-05-31"

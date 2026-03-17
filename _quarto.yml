@@ -6,10 +6,7 @@ lang: fr
 # codes exécutés en local
 execute:
   freeze: auto
-title-meta: "Hugo Cochereau"
-description-meta: "Portfolio de Hugo Cochereau"
-author-meta: "Hugo Cochereau"
-keywords-meta: "Hugo Cochereau, Data science, Economiste, Machine Learning"
+
 website:
   title: "Hugo Cochereau"
   favicon: "imgs/hc.ico"
@@ -21,9 +18,9 @@ website:
     prefs-text: "🍪 Paramètres des cookies"
     understand-text: "👍 J'accepte"
     text-decoration: none
-    
-  # google-analytics:
-  #   anonymize-ip: true
+  google-analytics:
+    tracking-id: "G-HBVTRTQK8N"
+    anonymize-ip: true
   navbar:
     title: " " 
     logo: "imgs/hc.png"
@@ -49,8 +46,6 @@ website:
         href: sections/competences.qmd
       - text: Projets
         href: sections/projets.qmd
-      - text: Contact
-        href: sections/contact.qmd
     toggle-position: right
     tools-collapse: false
   page-footer:
@@ -59,13 +54,18 @@ website:
 
     left: "© 2024, Hugo COCHEREAU"
     right:
-      - text: "🛠️ Créé avec **Quarto**"
-        href: https://quarto.org/docs/reference/projects/websites.html
+      - text: "🛠️ Réalisé avec **Quarto**"
+        href: https://quarto.org/
         target: _blank
-    center:
+    center: 
       - href: licence.qmd
         text: "Licence : CC BY-NC-SA"
         target: _blank
+
+title-meta: "Hugo Cochereau"
+description-meta: "Avec un master en économie spécialisé en Data Science, j’ai une solide expérience en analyse statistique, économétrie et apprentissage automatique. Je suis actuellement à la recherche d’une opportunité professionnelle pour mettre à profit mes compétences."
+keywords: ["Hugo Cochereau", "Data Science", "Economiste", "Statistiques", "Machine learning", "Python", "R", "SQL", "Git", "GitHub", "LinkedIn"]
+sitemap: true
 
 format:
   html:

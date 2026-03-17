@@ -1,0 +1,13 @@
+---
+title: "{{< fa file-pdf >}} Rapport pdf"
+title-block-banner: true
+description: "Accéder au rapport PDF"
+image: "./3R.png"
+categories: "pdf"
+author: "Hugo Cochereau & Gregory Jaillet"
+date: "2025-04-01"
+---
+
+[{{< fa file-pdf >}} Accéder au rapport pdf](rapport_3R_COCHEREAU_JAILLET.pdf){.btn .btn-outline-primary .btn-lg .center target="_blank"}
+
+

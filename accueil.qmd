@@ -8,10 +8,9 @@ format:
   html:
     css: "sections/sections_css/style_accueil.css"
 about:
-    template: trestles
-    image: "imgs/moi.jpg"
-    image-shape: round
-    links:
+  template: trestles
+  image: "imgs/moi.jpg"
+  links:
     - icon: linkedin
       text: LinkedIn
       href: https://www.linkedin.com/in/hugo-cochereau-175448207
@@ -27,29 +26,207 @@ about:
 ---
 
 
-# ÉTUDIANT EN ÉCONOMIE ET DATA SCIENCE 
 
-## {{< fa handshake >}} Bonjour, et bienvenue sur mon site !
+# Passionné de Data
 
-Avec un master en économie spécialisé en Data Science, j'ai une solide expérience en analyse statistique, économétrie et apprentissage automatique. Je suis actuellement à la recherche d'une opportunité professionnelle pour mettre à profit mes compétences.
+## {{< fa handshake>}} Bonjour, et bienvenue sur mon site !
 
-
-[Télécharger mon CV {{< fa download >}}](assets/CV.pdf){.btn .btn-outline-primary .btn role="button" .center .custom-hover target="_blank"}
-
-
+Je suis titulaire d'un master d'économie avec une spécialisation en Data Science. Tout au long de mon parcours, j'ai
+développé des compétences en analyse statistique, économie industrielle, économétrie et machine learning que je suis
+en mesure de mettre en oeuvre pour résoudre différents problèmes.
 
 
+## Compétences
+<hr>
+
+💻 Langages & Outils : Python | R | SQL | Git / GitHub
+
+🔧 Data Engineering : ETL | Web Scraping | Data Pipelines | Dataiku
+
+📊 Data Visualization : Tableau | Power BI | Streamlit | Plotly
+
+🤖 Data Science : Machine Learning | Clustering | Feature Engineering | NLP | Analyse Factorielle | Statistiques | Économétrie
+
+## Projets
+
+<hr>
+
+<div class="quarto-listing quarto-listing-container-grid" id="listing-listing">
+<div class="list grid quarto-listing-cols-3">
 
 
+<!-- Carte 1 -->
+<div class="g-col-1" data-categories="Python,Machine Learning,Développement, Streamlit">
+<a href="https://github.com/Greg-jllt/FightPredix" target="_blank" class="quarto-grid-link">
+<div class="quarto-grid-item card h-100 card-left">
+<p class="card-img-top">
+<img loading="lazy" src="./sections/projets/fightpredix/logo_fightpredix.png" class="thumbnail-image card-img" style="height: 150px;">
+</p>
+<div class="card-body post-contents">
+<h5 class="no-anchor card-title listing-title">FightPredix</h5>
+<div class="listing-categories">
+<div class="listing-category">Python</div>
+<div class="listing-category">Machine Learning</div>
+<div class="listing-category">Développement</div>
+<div class="listing-category">Streamlit</div>
+</div>
+<div class="card-text listing-description">
+Projet de Machine Learning visant à prédire le résultat d'une confrontation entre deux combattants UFC (64% Accuracy)
+</div>
+<div class="card-attribution card-text-small justify">
+<div class="listing-author">Hugo Cochereau & Gregory Jaillet</div>
+<div class="listing-date">1 avr. 2025</div>
+</div>
+</div>
+</div>
+</a>
+</div>
+
+<!-- Carte 2 -->
+<div class="g-col-1" data-categories="R,Python,Statistiques,Économétrie">
+<a href="./sections/projets/3R/3R.html" class="quarto-grid-link">
+<div class="quarto-grid-item card h-100 card-left">
+<p class="card-img-top">
+<img loading="lazy" src="./sections/projets/3R/3R_files/3R.png" class="thumbnail-image card-img" style="height: 150px;">
+</p>
+<div class="card-body post-contents">
+<h5 class="no-anchor card-title listing-title">3R : Attrition, Valeur Client et Portefeuille</h5>
+<div class="listing-categories">
+<div class="listing-category">R</div>
+<div class="listing-category">Python</div>
+<div class="listing-category">Statistiques</div>
+<div class="listing-category">Économétrie</div>
+</div>
+<div class="card-text listing-description">
+Le rapport présente l’analyse la valeur vie client (Customer Lifetime Value – CLV) et les facteurs influençant la fidélisation dans le secteur des télécommunications.
+</div>
+<div class="card-attribution card-text-small justify">
+<div class="listing-author">Hugo Cochereau & Gregory Jaillet</div>
+<div class="listing-date">1 avr. 2025</div>
+</div>
+</div>
+</div>
+</a>
+</div>
+
+<!-- Carte 3 -->
+<div class="g-col-1" data-categories="Python,Streamlit">
+<a href="./sections/projets/batchmonitor/batchmonitor.html" class="quarto-grid-link">
+<div class="quarto-grid-item card h-100 card-left">
+<p class="card-img-top">
+<img loading="lazy" src="./sections/projets/batchmonitor/batchmonitor.png" class="thumbnail-image card-img" style="height: 150px;">
+</p>
+<div class="card-body post-contents">
+<h5 class="no-anchor card-title listing-title">
+<i class="fa-solid fa-calculator" aria-label="chart-line"></i> Batch Monitor
+</h5>
+<div class="listing-categories">
+<div class="listing-category">Python</div>
+<div class="listing-category">Streamlit</div>
+</div>
+<div class="card-text listing-description">
+BatchMonitor est une bibliothèque de programmation linéaire conçue avec python et le package Pulp pour résoudre des problèmes d’optimisation dans divers domaines tels que la logistique et la fabrication. Elle offre une API simplifiée. 
+</div>
+<div class="card-attribution card-text-small justify">
+<div class="listing-author">Hugo Cochereau & Gregory Jaillet</div>
+<div class="listing-date">31 mai 2024</div>
+</div>
+</div>
+</div>
+</a>
+</div>
+
+</div>
 
 
+## Contact
 
+<hr>
+<!-- FORMULAIRE -->
+<div class="contact-wrapper">
+<form id="contact-form" class="contact-form">
+<div class="input-group">
+<label for="fullname">Nom complet *</label>
+<input type="text" id="fullname" name="fullname" required>
+</div>
 
+<div class="input-group">
+<label for="email">Email *</label>
+<input type="email" id="email" name="email" required>
+</div>
 
+<div class="input-group">
+<label for="phone">Téléphone (optionnel)</label>
+<input type="tel" id="phone" name="phone">
+</div>
 
+<div class="input-group">
+<label for="message">Message *</label>
+<textarea id="message" name="message" rows="5" required></textarea>
+</div>
 
+<!-- reCAPTCHA centré avec marge -->
+<div class="recaptcha-container">
+<div class="g-recaptcha" data-sitekey="6LdXQSIsAAAAAGXQL8KGyMpoqapFjUitQHfbG1CE"></div>
+</div>
 
+<button type="submit">Envoyer</button>
+</form>
 
+<div id="form-message">
+Merci ! Votre message a été envoyé avec succès.
+</div>
+</div>
 
+<!-- CSS pour centrer le captcha et ajouter une marge -->
+<style>
+.recaptcha-container {
+display: flex;
+width: 100%;
+justify-content: center; /* centre horizontalement */
+margin-bottom: 20px;    /* ajoute une marge sous le captcha */
+}
 
+#form-message {
+display: none;
+margin-top: 1em;
+margin-bottom: 1em;
+color: green;
+text-align: center;
+}
+</style>
 
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+<script>
+const form = document.getElementById('contact-form');
+const formMessage = document.getElementById('form-message');
+
+form.addEventListener('submit', async (e) => {
+e.preventDefault();
+
+const recaptchaResponse = grecaptcha.getResponse();
+if (!recaptchaResponse) {
+alert("Merci de vérifier que vous n'êtes pas un robot.");
+return;
+}
+
+const formData = new FormData(form);
+formData.append('g-recaptcha-response', recaptchaResponse);
+
+try {
+// Envoi du formulaire vers Formspree
+await fetch('https://formspree.io/f/xnnezgar', {
+method: 'POST',
+body: formData
+});
+
+// Affiche le message de succès et réinitialise le formulaire
+formMessage.style.display = 'block';
+form.reset();
+grecaptcha.reset();
+
+} catch (err) {
+console.error(err);
+}
+});
+</script>
