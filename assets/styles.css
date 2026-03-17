@@ -1,0 +1,451 @@
+/* css styles */
+
+.navbar {
+    display: flex;
+    align-items: center;
+    border-bottom: solid 3px #8B6508;
+    /* Ligne horizontale en bas de la navbar */
+}
+
+.navbar .navbar-brand {
+    display: flex;
+    /* Supprime les contraintes de dimensions maximales du logo */
+    max-height: none;
+    max-width: none;
+}
+
+/* animation du titre de la navbar */
+@keyframes slideIn {
+    from {
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+
+.navbar .navbar-title {
+    animation: slideIn 10s ease-out;
+    border-left: solid 3px #8B6508;
+    padding-left: 5vh;
+    padding-right: 5vh;
+    color: white;
+}
+
+.navbar-title::before {
+    content: "Hugo";
+    display: block;
+}
+
+.navbar-title::after {
+    content: "Cochereau";
+    display: block;
+}
+
+.navbar .navbar-brand img {
+    width: auto;
+    height: 8vh;
+    margin-right: 5vh;
+    filter: brightness(0) invert(1);
+    /* pour changer la couleur du logo */
+    max-height: none;
+    box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.5);
+    animation: spin 5s linear infinite;
+    /* Applique l'animation de rotation en continu */
+}
+
+/* Définir l'animation de rotation */
+@keyframes spin {
+    from {
+        transform: rotateY(0deg);
+    }
+
+    to {
+        transform: rotateY(360deg);
+    }
+}
+
+.navbar :hover {
+    color: #8B6508;
+}
+
+.navbar .nav-link {
+    color: white;
+    position: relative;
+    transition: color 300ms;
+}
+
+.navbar .nav-link:hover {
+    text-shadow: 0 0 5px #8B6508;
+    /* ombre des textes de la navbar */
+}
+
+/* Animation de la barre de navigation */
+.navbar .nav-link::before,
+.navbar .nav-link::after {
+    content: '';
+    /* création d'un pseudo-élément vide*/
+    position: absolute;
+    /* positionnement toute à gauche */
+    left: 0;
+    height: 2px;
+    background-color: #8B6508;
+    /* couleur des lignes */
+    transition: width 500ms;
+    width: 0;
+    /* les lignes ont une longeur nulle si on ne survole pas le lien */
+}
+
+/* emplacement propre aux deux lignes (haut et bas) */
+.navbar .nav-link::before {
+    top: 0;
+}
+
+.navbar .nav-link::after {
+    bottom: 0;
+}
+
+.navbar .nav-link:hover::before,
+.navbar .nav-link:hover::after,
+.navbar .nav-link.active::before,
+.navbar .nav-link.active::after {
+    /* les lignes s'étendent sur toute la longeur du lien au survol */
+    /* Cet effet est appliqué sans survol à la section active */
+    width: 100%;
+}
+
+
+.navbar .nav-link.active {
+    color: #8B6508;
+}
+
+
+/* Masquer les icônes GitHub, LinkedIn et Email sur les petits écrans */
+@media (max-width: 769px) {
+    .quarto-navbar-tools {
+        display: none;
+    }
+
+    /* Afficher les icônes de recherche et de menu hamburger sur les petits écrans */
+    .navbar-toggler,
+    #quarto-search {
+        display: block;
+    }
+}
+
+/* FORCE LIGHT MODE OVERRIDES */
+body {
+    background-color: #fff8e7 !important;
+    color: #222 !important;
+}
+
+.navbar {
+    background-color: #222 !important;
+    /* Keep navbar dark if desired, or match variables */
+}
+
+/* GLOBAL MOBILE FIXES */
+@media (max-width: 768px) {
+
+    html,
+    body {
+        overflow-x: hidden;
+        max-width: 100vw;
+    }
+
+    #quarto-content {
+        padding-left: 15px;
+        padding-right: 15px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+}
+
+/* faire disparaître le titre de la navbar ainsi que son animation sur les petits écrans */
+@media (max-width: 768px) {
+    .navbar-title {
+        animation: none;
+        /* content: "Hugo COCHEREAU"; REMOVED invalid property */
+        font-size: 14pt;
+        /* Increased slightly */
+        border-left: solid 3px #8B6508;
+        padding-left: 10px;
+        /* Reduced padding */
+        padding-right: 10px;
+        color: white;
+        display: block;
+        width: 100%;
+        white-space: nowrap;
+        /* Prevent wrapping */
+        overflow: visible;
+        /* Ensure it doesn't cut off */
+    }
+
+    /* Reset pseudo elements that might be interfering */
+    .navbar-title::before,
+    .navbar-title::after {
+        content: none !important;
+        display: none !important;
+    }
+
+    /* Mobile "About" Links Styling */
+    .about-links .about-link {
+        display: block;
+        width: 100%;
+        margin-bottom: 10px;
+        border: 1px solid #8B6508;
+        color: #fff !important;
+        /* Force readable text */
+        background-color: black;
+        border-radius: 5px;
+        text-align: center;
+        padding: 5px;
+    }
+}
+
+/* Afficher les icônes GitHub, LinkedIn et Email sur les grands écrans */
+@media (min-width: 769px) {
+    .quarto-navbar-tools {
+        display: flex;
+    }
+}
+
+h2:hover {
+    color: #8B6508;
+    transition: 1s;
+    text-shadow: 0 0 5px #8B6508;
+}
+
+h1:hover {
+    color: #8B6508;
+    transition: 1s;
+    text-shadow: 0 0 5px #8B6508;
+}
+
+
+
+/* Pour les écrans plus grands */
+@media (min-width: 1200px) {
+    div.quarto-about-trestles {
+        margin-left: -20vw;
+        margin-right: -17vw;
+        align-items: center;
+    }
+}
+
+
+.nav-footer {
+    color: white;
+    font-size: 20px;
+    border-top: solid 3px #8B6508;
+}
+
+.nav-footer a {
+    color: white;
+    text-decoration: none;
+    transition: 0.3s;
+}
+
+.nav-footer a:hover p:hover {
+    color: #8B6508;
+    text-shadow: 0 0 5px #8B6508;
+}
+
+
+/* personallisation des boutons */
+.btn:hover {
+    background-color: #343a40;
+    color: #8B6508;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+/* cookies */
+
+div.cookie-consent-footer a {
+    text-decoration: none;
+}
+
+.keywords {
+    display: none;
+}
+
+.card {
+    border-radius: 10px;
+    box-shadow: 0.5vh 0.5vh 0.5vh rgba(0, 0, 0, 0.2);
+}
+
+
+.card:hover {
+    transition: 0.5s;
+    cursor: pointer;
+    transform: scale(1.05);
+}
+
+/* catégorie exemple : python */
+.card-title.listing-title {
+    margin-bottom: 10px;
+}
+
+.listing-category:hover {
+    color: #8B6508 !important;
+    transition: 0.5s;
+    cursor: pointer;
+    text-shadow: 0 0 5px #8B6508;
+}
+
+
+/* image */
+.thumbnail-image {
+    border-radius: 10px;
+}
+
+/* Conteneur général */
+.contact-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    top: 0%;
+    padding: 40px 20px;
+}
+
+/* Carte du formulaire (glassmorphism) */
+.contact-form {
+    width: 100%;
+    max-width: 800px;
+    backdrop-filter: blur(12px);
+    background: rgba(255, 255, 255, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    padding: 35px;
+    border-radius: 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* Titre */
+.contact-form h2 {
+    text-align: center;
+    font-size: 28px;
+    margin-bottom: 25px;
+    font-weight: 700;
+    color: #222;
+}
+
+/* Groupes de champs */
+.input-group {
+    display: block;
+    align-items: center;
+    width: 100%;
+    flex-direction: column;
+    margin-bottom: 20px;
+}
+
+/* Labels */
+.input-group label {
+    display: block;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 6px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+}
+
+
+/* Champs */
+input,
+textarea {
+    padding: 12px 14px;
+    border-radius: 10px;
+    width: 100%;
+    border: 2px solid #ddd;
+    font-size: 15px;
+    transition: all 0.25s ease;
+    background: white;
+}
+
+/* Focus animé */
+input:focus,
+textarea:focus {
+    border-color: #000;
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+    outline: none;
+}
+
+/* Bouton stylisé */
+button {
+    width: 100%;
+    padding: 14px;
+    background: black;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+/* Hover bouton */
+button:hover {
+    background: #333;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+}
+
+/* Animation d'apparition */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile Contact Form Optimization */
+@media (max-width: 768px) {
+    .contact-wrapper {
+        padding: 20px 0px;
+        /* Maximize width */
+    }
+
+    .contact-form {
+        padding: 15px;
+        /* Minimal padding */
+        width: 100%;
+        max-width: 100%;
+        border-radius: 10px;
+    }
+
+    /* Adapt reCAPTCHA size */
+    .recaptcha-container {
+        transform: scale(0.9);
+        /* Slight scale down for safety */
+        transform-origin: center;
+        margin-bottom: 20px;
+    }
+}
+
+/* For very small screens */
+@media (max-width: 380px) {
+    .recaptcha-container {
+        transform: scale(0.75);
+        /* Stronger scale down */
+        transform-origin: center;
+        margin-left: -10px;
+        /* Slight adjustment if needed */
+    }
+
+    .contact-form h2 {
+        font-size: 22px;
+        /* Smaller title */
+    }
+}

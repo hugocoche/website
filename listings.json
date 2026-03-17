@@ -1,0 +1,44 @@
+[
+  {
+    "listing": "/sections/projets.html",
+    "items": [
+      "/sections/projets/3R/3R.html",
+      "/sections/projets/neet_memoire/memoire.html",
+      "/sections/projets/batchmonitor/batchmonitor.html",
+      "/sections/projets/data_mining/data_mining.html",
+      "/sections/projets/ade/ade.html",
+      "/sections/projets/meth_econo/meth_econo.html",
+      "/sections/projets/opti_lin/opti_lin.html",
+      "/sections/projets/opti_python/opti_python.html"
+    ]
+  },
+  {
+    "listing": "/sections/projets/data_mining/data_mining.html",
+    "items": [
+      "/sections/projets/data_mining/data_mining_files/connexion_perdu_source.html",
+      "/sections/projets/data_mining/data_mining_files/connexion_perdu_slides.html",
+      "/sections/projets/data_mining/data_mining_files/connexion_perdu_pdf.html"
+    ]
+  },
+  {
+    "listing": "/sections/projets/3R/3R.html",
+    "items": [
+      "/sections/projets/3R/3R_files/3R.html"
+    ]
+  },
+  {
+    "listing": "/sections/projets/ade/ade.html",
+    "items": [
+      "/sections/projets/ade/ade_files/melodie_enigmatique_source.html",
+      "/sections/projets/ade/ade_files/melodie_enigmatique_slide.html",
+      "/sections/projets/ade/ade_files/melodie_enigmatique_pdf.html"
+    ]
+  },
+  {
+    "listing": "/sections/projets/neet_memoire/memoire.html",
+    "items": [
+      "/sections/projets/neet_memoire/memoire_files/main_to_html.html",
+      "/sections/projets/neet_memoire/memoire_files/main_pdf.html"
+    ]
+  }
+]

@@ -1,0 +1,224 @@
+/* suppression des ancres */
+a.anchorjs-link {
+  display: none;
+}
+
+/* Dispose les éléments en grille */
+.skills-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  /* Une seule colonne par défaut */
+  gap: 3vw;
+  margin: 2vw 2vh
+}
+
+/* Section individuelle de compétences */
+.skills-section {
+  padding: 2vw;
+  border-radius: 10px;
+  box-shadow: 0.5vh 0.5vh 0.5vh rgba(0, 0, 0, 0.2);
+  transition: 1s;
+  position: relative;
+  overflow: hidden;
+  /* Masquer le débordement */
+}
+
+/* Ajouter une image de fond à chaque section "skills-section" */
+.skills-section::before {
+  content: "";
+  background-size: cover;
+  background-position: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  z-index: 1;
+}
+
+
+/* Superposer une couleur semi-transparente sur l'image de fond */
+.skills-section::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f2f2f2;
+  z-index: 2;
+  pointer-events: none;
+  /* Permettre les clics à travers la superposition */
+}
+
+
+/* Spécifier les images de fond pour chaque section */
+.skills-section.theoretical-knowledge::before {
+  background-image: url('../img_skills/biblio.jpg');
+}
+
+.skills-section.programming-languages::before {
+  background-image: url('../img_skills/programmation.jpg');
+}
+
+.skills-section.general-skills::before {
+  background-image: url('../img_skills/general.jpg');
+}
+
+.skills-section.tools-and-technologies::before {
+  background-image: url('../img_skills/outils.png');
+}
+
+
+
+
+
+.skills-section h2 {
+  position: relative;
+  color: black;
+  z-index: 3;
+  transition: transform 0.5s ease-in-out, top 0.5s ease-in-out;
+  top: 45%;
+  transform: translateY(-50%);
+  margin-bottom: 1vh;
+  font-size: 20px;
+  text-align: center;
+}
+
+.skills-section ul {
+  visibility: hidden;
+  opacity: 0;
+  position: relative;
+  z-index: 3;
+  transition: opacity 0.5s ease-in-out;
+  list-style-type: none;
+  padding: 0;
+}
+
+.skills-section:hover ul {
+  visibility: visible;
+  opacity: 1;
+}
+
+.skills-section:hover h2 {
+  top: 0%;
+  transform: translateY(0);
+}
+
+.skills-section:hover {
+  transform: translateY(-0.5vh);
+}
+
+
+code {
+  color: #8B6508;
+  padding: 2px;
+  border-radius: 0.2vw;
+}
+
+
+
+/* Style pour les éléments de liste */
+.skills-section ul li {
+  margin: 0.5vh 0;
+  margin-bottom: 20px;
+  padding: 1vw;
+  border-radius: 10px;
+  transition: 0.5s;
+  position: relative;
+  z-index: 1;
+  cursor: pointer;
+}
+
+.skills-section details ul {
+  list-style-type: disc;
+  /* Utilise des puces pour les listes à l'intérieur des details */
+  margin-left: 40px;
+  /* Ajoute une marge pour aligner les puces correctement */
+}
+
+/* Transition pour les enfants des éléments <details> */
+details[open]>ul {
+  max-height: 1000px;
+  transition: max-height 0.5s ease-in-out;
+}
+
+details:not([open])>ul {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease-in-out;
+}
+
+
+/* Effet survol sur les éléments de liste */
+.skills-section ul li:hover {
+  transform: scale(1.05);
+  /* Agrandir légèrement */
+  box-shadow: 0 0.5vh 1vh #343a40;
+}
+
+
+
+/* Effet avant survol sur les éléments de liste */
+.skills-section ul li::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: #343a40;
+  border-radius: 50%;
+  transition: 0.5s;
+  z-index: -1;
+}
+
+
+/* zoom improvisé au survol des éléments de liste */
+.skills-section ul li:hover::after {
+  width: 200%;
+  height: 200%;
+  top: -10%;
+  left: -10%;
+}
+
+.skills-section summary {
+  color: black;
+  font-size: 1.5vw;
+}
+
+
+
+/* Styles pour les écrans larges */
+@media (min-width: 1300px) {
+  .skills-container {
+    grid-template-columns: 1fr 1fr;
+    /* Deux colonnes pour les écrans larges */
+  }
+
+  /* Réduction des marges */
+  main {
+    margin-left: -20vw;
+    margin-right: -20vw;
+  }
+
+  .skills-section h2 {
+    font-size: 3vh;
+  }
+}
+
+/* agrandir le padding des box au maximum pour les petits écrans */
+@media (max-width: 768px) {
+  .skills-container {
+    padding: 0;
+  }
+
+  .skills-section h2 {
+    font-size: 5vw;
+  }
+
+  .skills-section summary {
+    color: black;
+    font-size: 15px;
+  }
+}

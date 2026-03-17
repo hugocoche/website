@@ -1,0 +1,115 @@
+/* animation des liens externes */
+div.quarto-about-trestles .about-entity .about-link:hover {
+    color: #8B6508;
+    transition: 1.5s;
+    background-color: #343a40;
+}
+
+div.quarto-about-trestles {
+    align-items: flex-start;
+}
+
+div.quarto-about-trestles .about-entity {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    justify-content: center;
+    padding-right: 1em;
+}
+
+/* animation du bouton de téléchargement */
+.custom-hover:hover {
+    color: #8B6508;
+    background-color: #343a40;
+    transition: 1s;
+}
+
+html body.nav-fixed.fullcontent.quarto-light div#quarto-content.quarto-container.page-columns.page-rows-contents.page-layout-article.page-navbar div.quarto-about-trestles div.about-entity img.about-image.rounded {
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
+    border-color: #343a40;
+    transition: transform 1s;
+    /* Ajoute une transition pour l'animation */
+    transform-style: preserve-3d;
+    /* Préserve la transformation 3D */
+}
+
+
+/* Définir l'animation de flottement */
+@keyframes float {
+    0% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+
+    100% {
+        transform: translateY(0);
+    }
+}
+
+
+/* Animation pour le texte de bienvenue */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+h1 {
+    font-size: 25px;
+}
+
+h2 {
+    animation: fadeIn 4s ease-in-out;
+    font-size: 20px;
+}
+
+/* Réduire la taille de l'image pour la version téléphone et centrer */
+@media (max-width: 768px) {
+    div.quarto-about-trestles .about-entity {
+        display: flex !important;
+        flex-direction: column;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    img {
+        width: 250px;
+        /* Fixed resonable width or percentage */
+        max-width: 80%;
+        height: auto;
+        margin: 0 auto 20px auto !important;
+        /* Center and add bottom margin */
+        display: block;
+    }
+
+    div.quarto-about-trestles {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+    }
+
+    /* Ensure contents are centered */
+    .about-contents {
+        text-align: center;
+        width: 100%;
+        padding: 0 10px;
+    }
+}
+
+
+.listing-category {
+    height: 20px
+}

@@ -1,0 +1,44 @@
+/* écran plus large */
+@media (min-width: 1200px) {
+
+    #quarto-document-content,
+    #title-block-header.quarto-title-block.default.page-columns.page-full {
+        margin-left: -10vw;
+    }
+}
+
+
+/* entête des projets */
+
+.description {
+    color: white;
+    padding: 20px;
+}
+
+
+/* style du titre */
+.quarto-title-banner .title {
+    color: #8B6508;
+    position: relative;
+}
+
+.quarto-title-banner .title::before,
+.quarto-title-banner .title::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #8B6508;
+    /* Couleur des lignes */
+}
+
+.quarto-title-banner .title::before {
+    top: -10px;
+    /* Positionner la ligne au-dessus du titre */
+}
+
+.quarto-title-banner .title::after {
+    bottom: -10px;
+    /* Positionner la ligne en dessous du titre */
+}
